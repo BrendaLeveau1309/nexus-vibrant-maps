@@ -10,7 +10,7 @@ export type Campaign = {
   participants: Participant[];
 };
 export type Interest = { id: string; name: string; hospital: string; registeredAt: string };
-export type CphState = { interestedCount: number; myInterest: boolean; myHospital?: string; interests: Interest[]; campaigns: Campaign[] };
+export type CphState = { interestedCount: number; myInterest: boolean; myHospital?: string | undefined; interests: Interest[]; campaigns: Campaign[] };
 export const CPH_HOSPITALS = ["Hospital Nacional Dos de Mayo", "Hospital Edgardo Rebagliati", "Hospital Arzobispo Loayza"];
 
 export const CPH_KEY = "nexovital-cph-v2";
