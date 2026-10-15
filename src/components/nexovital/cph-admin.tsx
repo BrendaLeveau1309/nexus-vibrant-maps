@@ -1,0 +1,105 @@
+import { useEffect, useState, type FormEvent } from "react";
+import { CalendarDays, CheckCircle2, HeartHandshake, Megaphone, Send, Users, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { loadCph, saveCph, setAttendance, subscribeCph, type Campaign, type CphState } from "@/lib/cph-store";
+
+export function CphAdmin({ centers }: { centers: string[] }) {
+  const [state, setState] = useState<CphState | null>(null);
+  const [filter, setFilter] = useState<"Todas" | "BORRADOR" | "PUBLICADA">("Todas");
+  const [creating, setCreating] = useState(false);
+  const [publishing, setPublishing] = useState<Campaign | null>(null);
+  const [selected, setSelected] = useState<string | null>(null);
+  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+
+  useEffect(() => { const r = () => setState(loadCph()); r(); return subscribeCph(r); }, []);
+  if (!state) return null;
+  const update = (next: CphState) => { saveCph(next); setState(next); };
+  const list = state.campaigns.filter(c => filter === "Todas" || c.status === filter);
+  const confirmed = state.campaigns.reduce((n, c) => n + c.participants.filter(p => p.status === "CONFIRMADO").length, 0);
+  const current = selected ? state.campaigns.find(c => c.id === selected) : null;
+  const today = new Date().toISOString().slice(0, 10);
+
+  const create = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const d = new FormData(e.currentTarget);
+    const capacity = Number(d.get("capacity"));
+    const name = String(d.get("name") ?? "").trim();
+    if (!name || !capacity || capacity < 1) { setMsg({ ok: false, text: "Completa los campos y una capacidad válida." }); return; }
+    const c: Campaign = { id: `cph-${Date.now()}`, name, description: String(d.get("description") ?? ""), establishment: String(d.get("establishment") ?? ""), date: String(d.get("date") ?? ""), time: `${d.get("start")} - ${d.get("end")}`, capacity, status: "BORRADOR", participants: [] };
+    update({ ...state, campaigns: [c, ...state.campaigns] });
+    setCreating(false); setMsg({ ok: true, text: `Borrador “${name}” guardado.` });
+  };
+  const publish = () => {
+    if (!publishing) return;
+    update({ ...state, campaigns: state.campaigns.map(c => c.id === publishing.id ? { ...c, status: "PUBLICADA" } : c) });
+    setMsg({ ok: true, text: `Campaña publicada. Ya es visible en la app y se notificó a ${state.interestedCount} usuarios interesados.` });
+    setPublishing(null);
+  };
+
+  return <>
+    <h2 className="text-3xl font-extrabold">Campañas CPH</h2>
+    <p className="text-muted-foreground">Difusión de campañas de células progenitoras hematopoyéticas.</p>
+    {msg && <p role="status" className={`mt-5 rounded-lg p-3 text-sm font-bold ${msg.ok ? "bg-accent text-accent-foreground" : "bg-destructive/10 text-destructive"}`}>{msg.text}</p>}
+    <div className="mt-6 grid gap-4 sm:grid-cols-3">
+      {([[state.interestedCount, "Usuarios con interés activo", HeartHandshake, "tint-primary"], [state.campaigns.filter(c => c.status === "PUBLICADA").length, "Campañas publicadas", Megaphone, "tint-teal"], [confirmed, "Participantes confirmados", Users, "tint-gold"]] as const).map(([v, l, Icon, t]) =>
+        <article key={l} className={`rounded-xl border p-6 shadow-sm ${t}`}><Icon className="size-5 text-primary" /><p className="mt-3 text-3xl font-extrabold">{v}</p><p className="text-sm text-muted-foreground">{l}</p></article>)}
+    </div>
+    <p className="mt-2 text-xs text-muted-foreground">El interés activo no equivale a participación confirmada en una campaña.</p>
+
+    <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
+      <div className="flex gap-1">{(["Todas", "BORRADOR", "PUBLICADA"] as const).map(f => <Button key={f} size="sm" variant={filter === f ? "default" : "outline"} onClick={() => setFilter(f)}>{f}</Button>)}</div>
+      <Button variant="vivid" onClick={() => { setMsg(null); setCreating(true); }}><Megaphone />Nueva campaña</Button>
+    </div>
+    <div className="mt-4 overflow-x-auto rounded-xl border bg-card">
+      <table className="w-full text-sm">
+        <thead className="bg-muted text-left text-xs uppercase text-muted-foreground"><tr><th className="p-3">Campaña</th><th className="p-3">Establecimiento</th><th className="p-3">Fecha</th><th className="p-3">Cupos</th><th className="p-3">Estado</th><th className="p-3 text-right">Acciones</th></tr></thead>
+        <tbody>{list.map(c => <tr key={c.id} className="border-t">
+          <td className="p-3 font-bold">{c.name}</td><td className="p-3">{c.establishment}</td><td className="p-3">{c.date} · {c.time}</td>
+          <td className="p-3">{c.participants.length}/{c.capacity}</td>
+          <td className="p-3"><span className={`rounded-full px-2 py-0.5 text-[11px] font-extrabold ${c.status === "PUBLICADA" ? "bg-success/15 text-success" : "bg-muted text-muted-foreground"}`}>{c.status}</span></td>
+          <td className="p-3 text-right"><div className="flex justify-end gap-2">
+            {c.status === "BORRADOR" && <Button size="sm" variant="vivid" onClick={() => setPublishing(c)}><Send />Publicar</Button>}
+            <Button size="sm" variant="outline" onClick={() => setSelected(c.id)}>Participantes</Button>
+          </div></td>
+        </tr>)}
+        {list.length === 0 && <tr><td colSpan={6} className="p-6 text-center text-muted-foreground">No hay campañas con este filtro.</td></tr>}</tbody>
+      </table>
+    </div>
+
+    {current && <section className="mt-6 rounded-xl border bg-card p-5">
+      <div className="flex items-center justify-between"><h3 className="text-lg font-extrabold">Participantes · {current.name}</h3><Button size="icon" variant="ghost" aria-label="Cerrar" onClick={() => setSelected(null)}><X /></Button></div>
+      <p className="text-xs text-muted-foreground">{current.date === today ? "Hoy es el día de la campaña: registra la asistencia de los confirmados." : "La asistencia se registra el día de la campaña."}</p>
+      {current.participants.length === 0 && <p className="mt-4 text-sm text-muted-foreground">Aún no hay participantes.</p>}
+      <div className="mt-3 divide-y">{current.participants.map(p => <div key={p.id} className="flex flex-wrap items-center justify-between gap-2 py-3 text-sm">
+        <span className="font-semibold">{p.name} <span className={`ml-2 rounded-full px-2 py-0.5 text-[10px] font-extrabold ${p.status === "CONFIRMADO" ? "bg-chart-teal/15 text-chart-teal" : "bg-muted text-muted-foreground"}`}>{p.status}</span></span>
+        {p.status === "CONFIRMADO" && (current.date === today
+          ? <div className="flex gap-2">{(["ASISTIO", "NO_ASISTIO"] as const).map(a => <Button key={a} size="sm" variant={p.attendance === a ? "default" : "outline"} onClick={() => { update(setAttendance(state, current.id, p.id, a)); setMsg({ ok: true, text: `Asistencia registrada: ${p.name} · ${a}` }); }}>{a === "ASISTIO" ? <CheckCircle2 /> : <X />}{a}</Button>)}</div>
+          : <span className="text-xs font-bold text-muted-foreground">{p.attendance ?? "Pendiente"}</span>)}
+      </div>)}</div>
+    </section>}
+
+    {creating && <Dialog title="Nueva campaña CPH" onClose={() => setCreating(false)}>
+      <form onSubmit={create} className="space-y-3">
+        <In label="Nombre" name="name" /><label className="block text-sm font-bold">Descripción<textarea name="description" required maxLength={500} className="mt-1 w-full rounded-lg border bg-surface px-3 py-2" /></label>
+        <label className="block text-sm font-bold">Establecimiento<select name="establishment" className="mt-1 w-full rounded-lg border bg-surface px-3 py-2">{centers.map(c => <option key={c}>{c}</option>)}</select></label>
+        <div className="grid grid-cols-3 gap-2"><In label="Fecha" name="date" type="date" /><In label="Inicio" name="start" type="time" /><In label="Fin" name="end" type="time" /></div>
+        <In label="Capacidad" name="capacity" type="number" />
+        <p className="flex items-center gap-2 text-xs text-muted-foreground"><CalendarDays className="size-4" />La campaña se guarda como BORRADOR hasta publicarla.</p>
+        <Button className="w-full" variant="vivid">Guardar borrador</Button>
+      </form>
+    </Dialog>}
+    {publishing && <Dialog title="Publicar campaña" onClose={() => setPublishing(null)}>
+      <p className="text-sm text-muted-foreground">“{publishing.name}” pasará a PUBLICADA, será visible en la app móvil y se notificará a los usuarios con interés activo.</p>
+      <div className="mt-4 flex gap-2"><Button variant="outline" className="flex-1" onClick={() => setPublishing(null)}>Cancelar</Button><Button variant="vivid" className="flex-1" onClick={publish}><Send />Publicar campaña</Button></div>
+    </Dialog>}
+  </>;
+}
+
+function In({ label, name, type = "text" }: { label: string; name: string; type?: string }) {
+  return <label className="block text-sm font-bold">{label}<input name={name} type={type} required min={type === "number" ? 1 : undefined} maxLength={120} className="mt-1 w-full rounded-lg border bg-surface px-3 py-2 font-normal" /></label>;
+}
+function Dialog({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
+  return <div className="fixed inset-0 z-50 grid place-items-center bg-foreground/40 p-4" role="dialog" aria-modal="true" aria-label={title}>
+    <div className="w-full max-w-lg rounded-xl bg-card p-6 shadow-panel"><div className="mb-4 flex items-center justify-between"><h3 className="text-xl font-extrabold">{title}</h3><Button size="icon" variant="ghost" aria-label="Cerrar" onClick={onClose}><X /></Button></div>{children}</div>
+  </div>;
+}
