@@ -44,8 +44,9 @@ export function CphView({ onBack }: { onBack: () => void }) {
         <article className="rounded-xl border bg-card p-4">
           <p className="text-xs font-extrabold uppercase text-primary">Interés general</p>
           {state.myInterest
-            ? <p className="mt-2 flex items-center gap-2 text-sm font-bold text-success"><CheckCircle2 className="size-4" />Interés CPH: ACTIVO</p>
+            ? <p role="status" className="mt-2 flex items-center gap-2 text-sm font-bold text-success"><CheckCircle2 className="size-4" />Interés CPH: ACTIVO</p>
             : <p className="mt-2 text-sm text-muted-foreground">Aún no has manifestado interés.</p>}
+          {state.myInterest && message === "interest" && <p role="status" className="mt-2 rounded-lg bg-success/15 p-3 text-xs font-bold text-success">¡Tu interés quedó registrado! Recibirás información sobre nuevas campañas CPH.</p>}
           {!state.myInterest && <Button className="mt-3 w-full" variant="vivid" size="lg" onClick={() => setConfirmInterest(true)}>Me interesa ser potencial donante de CPH</Button>}
         </article>
 
