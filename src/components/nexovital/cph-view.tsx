@@ -64,7 +64,7 @@ export function CphView({ onBack }: { onBack: () => void }) {
 
       {confirmInterest && <Sheet title="Confirmar interés" onClose={() => setConfirmInterest(false)}>
         <p className="text-sm text-muted-foreground">Registraremos tu interés para recibir información y campañas CPH. Esto no es una inscripción oficial ni una evaluación médica.</p>
-        <Button className="mt-4 w-full" variant="vivid" onClick={() => { update(registerInterest(state)); setConfirmInterest(false); }}>Confirmar interés</Button>
+        <Button className="mt-4 w-full" variant="vivid" onClick={() => { update(registerInterest(state)); setConfirmInterest(false); setMessage("interest"); }}>Confirmar interés</Button>
         <Button className="mt-2 w-full" variant="ghost" onClick={() => setConfirmInterest(false)}>Cancelar</Button>
       </Sheet>}
 
