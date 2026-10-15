@@ -20,7 +20,8 @@ export function CphView({ onBack }: { onBack: () => void }) {
 
   useEffect(() => { const r = () => setState(loadCph()); r(); return subscribeCph(r); }, []);
   if (!state) return null;
-  const published = state.campaigns.filter(c => c.status === "PUBLICADA" && !isFinished(c) && (!state.myHospital || c.establishment === state.myHospital));
+  const subscribed = (state.myInterest && !!state.myHospital) || isRegistered(state, DEMO_USER.id);
+  const published = subscribed ? state.campaigns.filter(c => c.status === "PUBLICADA" && !isFinished(c) && (!state.myHospital || c.establishment === state.myHospital)) : [];
   const mine = (c: Campaign) => c.participants.find(p => p.id === DEMO_USER.id);
   const registered = isRegistered(state, DEMO_USER.id);
   const update = (next: CphState) => { saveCph(next); setState(next); };

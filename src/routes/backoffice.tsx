@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
-import { Activity, Building2, ClipboardPlus, Droplets, HeartPulse, LayoutDashboard, LogOut, Megaphone, Search, UserPlus, Users, X, type LucideIcon } from "lucide-react";
+import { Activity, ArrowRight, Building2, ClipboardPlus, Droplets, Eye, EyeOff, FileText, Heart, HeartPulse, LayoutDashboard, Lock, LogOut, Megaphone, Monitor, Search, Smartphone, User, UserPlus, Users, X, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CphAdmin } from "@/components/nexovital/cph-admin";
 
@@ -91,6 +91,7 @@ function Backoffice() {
   const [dateFilter, setDateFilter] = useState("");
   const [notice, setNotice] = useState("");
   const [recover, setRecover] = useState(false);
+  const [showPw, setShowPw] = useState(false);
   const [newCode, setNewCode] = useState<string | null>(null);
   const [processStep, setProcessStep] = useState<Step>("identify");
   const [processError, setProcessError] = useState("");
@@ -139,7 +140,48 @@ function Backoffice() {
   const toggleCenter = (name: string) => setCenters(cs => cs.map(c => c.name === name ? { ...c, active: !c.active } : c));
   const toggleStaff = (doc: string) => setStaff(ss => ss.map(s => s.document === doc ? { ...s, active: !s.active } : s));
 
-  if (!entered) return <main className="grid min-h-screen place-items-center bg-primary p-5"><section className="w-full max-w-md rounded-lg border bg-card p-7 shadow-panel"><div className="mb-7 flex items-center gap-3"><span className="grid size-12 place-items-center rounded-lg bg-primary text-primary-foreground"><HeartPulse /></span><div><h1 className="text-2xl font-extrabold">NexoVital</h1><p className="text-sm text-muted-foreground">Acceso institucional</p></div></div>{recover ? <form onSubmit={event => { event.preventDefault(); setNotice("Si el correo está registrado, recibirás instrucciones para recuperar tu acceso."); }}><h2 className="font-bold">Recuperar acceso</h2><label className="mt-4 block text-sm font-bold">Correo institucional<input type="email" required className="mt-2 w-full rounded-lg border px-4 py-3" placeholder="nombre@hospital.pe" /></label><Button className="mt-5 w-full" variant="vivid">Enviar instrucciones</Button><Button type="button" className="mt-2 w-full" variant="ghost" onClick={() => { setRecover(false); setNotice(""); }}>Volver</Button></form> : <form onSubmit={event => { event.preventDefault(); setEntered(true); setNotice(""); }}><label className="text-sm font-bold">Tipo de documento<select className="mt-2 w-full rounded-lg border bg-surface px-4 py-3"><option>DNI</option><option>CE</option><option>Pasaporte</option></select></label><label className="mt-4 block text-sm font-bold">Número de documento<input required className="mt-2 w-full rounded-lg border px-4 py-3" placeholder="Ingresa tu documento" /></label><label className="mt-4 block text-sm font-bold">Contraseña<input required type="password" className="mt-2 w-full rounded-lg border px-4 py-3" placeholder="••••••••" /></label><Button type="button" variant="link" className="mt-3 px-0" onClick={() => setRecover(true)}>¿Olvidaste tu contraseña?</Button><Button className="mt-6 w-full" variant="vivid" size="lg">Iniciar sesión</Button><Button type="button" className="mt-2 w-full" variant="ghost" onClick={() => setEntered(true)}>Explorar demostración</Button><Button type="button" className="mt-1 w-full" variant="ghost" onClick={toggleRole}>Vista demo: {role === "admin" ? "Administrador" : "Personal hospitalario"}</Button></form>}{notice && <p role="status" className="mt-3 text-sm text-primary">{notice}</p>}<Link to="/" className="mt-4 block text-center text-xs font-bold text-muted-foreground">Volver a la app móvil</Link></section></main>;
+  if (!entered) {
+    const field = "flex items-center gap-3 rounded-lg border bg-surface px-4 focus-within:ring-2 focus-within:ring-primary/40";
+    return <main className="grid min-h-screen bg-surface md:grid-cols-[1fr_1fr]">
+      <section className="relative hidden overflow-hidden bg-primary text-primary-foreground md:flex md:flex-col md:items-center md:justify-center">
+        <span aria-hidden className="absolute -left-32 -top-32 size-96 rounded-full bg-primary-foreground/10" />
+        <span aria-hidden className="absolute -bottom-40 -right-24 size-[28rem] rounded-full bg-primary-foreground/10" />
+        <div className="relative text-center">
+          <div className="mx-auto flex justify-center gap-6"><span className="size-12 rounded-full bg-primary-foreground" /><span className="size-12 rounded-full bg-primary-foreground" /></div>
+          <span className="mx-auto -mt-2 grid size-40 place-items-center"><Heart className="size-40 fill-primary-foreground text-primary-foreground" /><HeartPulse className="absolute size-16 text-primary" /></span>
+          <h1 className="mt-4 text-6xl font-extrabold tracking-tight">NexoVital</h1>
+          <p className="mt-3 text-xl text-primary-foreground/85">Plataforma de gestión de donaciones</p>
+        </div>
+        <p className="absolute bottom-10 left-10 flex items-center gap-3 text-sm text-primary-foreground/85"><span className="h-px w-8 bg-primary-foreground/70" />Juntos conectamos vidas</p>
+      </section>
+      <section className="flex items-center justify-center p-6 sm:p-10">
+        <div className="w-full max-w-xl">
+          <div className="mb-6 flex items-center gap-2 md:hidden"><HeartPulse className="text-primary" /><b className="text-xl">NexoVital</b></div>
+          {recover ? <form onSubmit={event => { event.preventDefault(); setNotice("Si el correo está registrado, recibirás instrucciones para recuperar tu acceso."); }}>
+            <h2 className="text-4xl font-extrabold">Recuperar acceso</h2>
+            <p className="mt-2 text-muted-foreground">Te enviaremos instrucciones a tu correo institucional.</p>
+            <label className="mt-8 block text-sm font-bold">Correo institucional<div className={`${field} mt-2`}><User className="size-5 text-muted-foreground" /><input type="email" required className="w-full bg-transparent py-3.5 outline-none" placeholder="nombre@hospital.pe" /></div></label>
+            <Button className="mt-6 h-14 w-full text-base" variant="vivid">Enviar instrucciones</Button>
+            <Button type="button" className="mt-2 w-full" variant="ghost" onClick={() => { setRecover(false); setNotice(""); }}>Volver</Button>
+          </form> : <form onSubmit={event => { event.preventDefault(); setEntered(true); setNotice(""); }}>
+            <h2 className="text-4xl font-extrabold">Bienvenido</h2>
+            <p className="mt-2 text-lg text-muted-foreground">Inicia sesión en la plataforma NexoVital</p>
+            <label className="mt-8 block text-sm font-bold">Tipo de documento<div className={`${field} mt-2`}><FileText className="size-5 text-muted-foreground" /><select className="w-full bg-transparent py-3.5 font-normal outline-none"><option>DNI</option><option>Carné de extranjería</option><option>Pasaporte</option></select></div></label>
+            <label className="mt-5 block text-sm font-bold">Número de documento<div className={`${field} mt-2`}><User className="size-5 text-muted-foreground" /><input required inputMode="numeric" className="w-full bg-transparent py-3.5 font-normal outline-none" placeholder="Ingresa tu número de documento" /></div></label>
+            <label className="mt-5 block text-sm font-bold">Contraseña<div className={`${field} mt-2`}><Lock className="size-5 text-muted-foreground" /><input required type={showPw ? "text" : "password"} className="w-full bg-transparent py-3.5 font-normal outline-none" placeholder="••••••" /><Button type="button" size="icon" variant="ghost" aria-label={showPw ? "Ocultar contraseña" : "Mostrar contraseña"} onClick={() => setShowPw(!showPw)}>{showPw ? <EyeOff /> : <Eye />}</Button></div></label>
+            <Button type="button" variant="link" className="mt-3 px-0" onClick={() => setRecover(true)}>¿Olvidaste tu contraseña?</Button>
+            <Button className="mt-4 h-14 w-full text-base" variant="vivid">Iniciar sesión <ArrowRight /></Button>
+            <div className="mt-8 flex flex-col items-center gap-1 border-t pt-6">
+              <Button type="button" variant="ghost" className="text-muted-foreground" onClick={() => setEntered(true)}><Monitor />Explorar demostración</Button>
+              <Button type="button" variant="ghost" className="text-muted-foreground" onClick={toggleRole}><Users />Vista demo: {role === "admin" ? "Administrador" : "Personal hospitalario"}</Button>
+              <Button asChild variant="ghost" className="text-muted-foreground"><Link to="/"><Smartphone />Volver a la app móvil</Link></Button>
+            </div>
+          </form>}
+          {notice && <p role="status" className="mt-3 text-sm text-primary">{notice}</p>}
+        </div>
+      </section>
+    </main>;
+  }
 
   const items: { id: Section; label: string; icon: LucideIcon }[] = role === "admin" ? [{ id: "dashboard", label: "Inicio", icon: LayoutDashboard }, { id: "staff", label: "Personal de salud", icon: UserPlus }, { id: "centers", label: "Establecimientos", icon: Building2 }] : [{ id: "dashboard", label: "Inicio", icon: LayoutDashboard }, { id: "requests", label: "Solicitudes", icon: Droplets }, { id: "process", label: "Proceso activo", icon: Activity }, { id: "cph", label: "Campañas CPH", icon: Megaphone }];
 
