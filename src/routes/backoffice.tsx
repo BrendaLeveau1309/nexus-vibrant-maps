@@ -17,12 +17,26 @@ export const Route = createFileRoute("/backoffice")({
 
 type Section = "dashboard" | "requests" | "process" | "staff" | "centers" | "cph";
 type Role = "hospital" | "admin";
+// Padrón demo para autocompletar nombres a partir del DNI.
+const DNI_REGISTRY: Record<string, string> = {
+  "45678912": "Juan Quispe Huamán", "46789123": "Lucía Ramos Torres", "40881234": "Miguel Flores Rojas", "71234560": "Rosa Paredes Díaz",
+  "72345678": "Carmen Salazar Vega", "43219876": "Pedro Gutiérrez León", "70123456": "Andrea Castillo Ruiz", "44556677": "Luis Mendoza Chávez",
+};
+export const lookupDni = (dni: string) => DNI_REGISTRY[dni.replace(/\D/g, "")] ?? null;
+function DniField({ label, name }: { label: string; name: string }) {
+  const [v, setV] = useState("");
+  const found = v.length === 8 ? lookupDni(v) : null;
+  return <label className="block text-sm font-bold">{label}<input required name={name} value={v} onChange={e => setV(e.target.value.replace(/\D/g, "").slice(0, 8))} inputMode="numeric" pattern="\d{8}" className="mt-2 w-full rounded-lg border p-3" placeholder="8 dígitos" />
+    {v.length === 8 && <span className={`mt-1 block text-xs font-semibold ${found ? "text-success" : "text-destructive"}`}>{found ?? "DNI no encontrado en el padrón"}</span>}</label>;
+}
+
 type DialogKind = "request" | "staff" | "center" | null;
 
 type Center = { name: string; address: string; active: boolean };
 type StaffMember = { name: string; document: string; center: string; active: boolean };
 type Request = {
   code: string; patient: string; patientDoc: string; blood: string; rh: string;
+  requesterDoc?: string; requesterName?: string; originHospital?: string;
   units: number; fulfilled: number; urgency: string; status: "En proceso" | "Atendida" | "Cancelada";
   created: string; closed: string | null;
   donations: { alias: string; status: string; result: string }[];
@@ -72,6 +86,7 @@ function Backoffice() {
   const [staff, setStaff] = useState(initialStaff);
   const [search, setSearch] = useState("");
   const [query, setQuery] = useState("");
+  const [dniSearch, setDniSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("Todos");
   const [dateFilter, setDateFilter] = useState("");
   const [notice, setNotice] = useState("");
@@ -101,18 +116,21 @@ function Backoffice() {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
     const name = String(data.get("name") ?? "").trim();
-    if (!name) return;
     if (dialog === "request") {
+      const patientDni = String(data.get("patientDoc") ?? ""), requesterDni = String(data.get("requesterDoc") ?? "");
+      const patientName = lookupDni(patientDni), requesterName = lookupDni(requesterDni);
+      if (!patientName || !requesterName) { setNotice("Verifica que ambos DNI estén registrados en el padrón."); return; }
       const code = `NV-${Math.floor(10000 + Math.random() * 90000)}`;
       const blood = String(data.get("blood") ?? "O");
       setRequests(current => [{
-        code, patient: name, patientDoc: String(data.get("patientDoc") ?? ""), blood: blood.replace(/[+-]/, ""), rh: blood.includes("-") ? "-" : "+",
+        code, patient: patientName, patientDoc: `DNI ${patientDni}`, requesterDoc: `DNI ${requesterDni}`, requesterName, originHospital: String(data.get("origin") ?? "").trim(), blood: blood.replace(/[+-]/, ""), rh: blood.includes("-") ? "-" : "+",
         units: Number(data.get("units") ?? 1), fulfilled: 0, urgency: String(data.get("urgency") ?? "Media"),
         status: "En proceso", created: "hoy", closed: null, donations: [],
       }, ...current]);
       setDialog(null); setNewCode(code); navigate("requests");
       return;
     }
+    if (!name) return;
     if (dialog === "staff") { setStaff(current => [{ name, document: String(data.get("document") ?? ""), center: String(data.get("center") ?? ""), active: true }, ...current]); navigate("staff"); }
     if (dialog === "center") { setCenters(current => [{ name, address: String(data.get("address") ?? ""), active: true }, ...current]); navigate("centers"); }
     setDialog(null); setNotice("Registro guardado en esta demostración.");
@@ -127,7 +145,7 @@ function Backoffice() {
 
   const centerResults = centers.filter(c => c.name.toLowerCase().includes(query.toLowerCase()));
   const requestResults = requests.filter(r =>
-    r.code.toLowerCase().includes(query.toLowerCase()) &&
+    r.code.toLowerCase().includes(query.toLowerCase()) && r.patientDoc.replace(/\D/g, "").includes(dniSearch.replace(/\D/g, "")) &&
     (statusFilter === "Todos" || r.status === statusFilter) &&
     (!dateFilter || r.created.includes(dateFilter))
   );
@@ -199,6 +217,7 @@ function Backoffice() {
         <Button className="mt-5" variant="vivid" onClick={() => open("request")}><ClipboardPlus />Nueva solicitud</Button>
         <div className="mt-6 flex flex-wrap gap-2">
           <form className="flex min-w-0 flex-1 items-center gap-2 rounded-lg border bg-surface px-4" onSubmit={e => { e.preventDefault(); setQuery(search.trim()); }}><Search className="size-4 text-muted-foreground" /><input value={search} onChange={e => setSearch(e.target.value)} className="w-full py-2.5" placeholder="Buscar por código" /></form>
+          <div className="flex min-w-0 flex-1 items-center gap-2 rounded-lg border bg-surface px-4"><Search className="size-4 text-muted-foreground" /><input value={dniSearch} onChange={e => setDniSearch(e.target.value.replace(/\D/g, "").slice(0, 8))} inputMode="numeric" aria-label="Buscar por DNI del paciente" className="w-full py-2.5" placeholder="Buscar por DNI del paciente" />{dniSearch.length === 8 && <span className="shrink-0 text-xs font-semibold text-muted-foreground">{lookupDni(dniSearch) ?? "No encontrado"}</span>}</div>
           <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="rounded-lg border bg-surface px-3 py-2.5 text-sm font-semibold">{["Todos", "En proceso", "Atendida", "Cancelada"].map(x => <option key={x}>{x}</option>)}</select>
           <input value={dateFilter} onChange={e => setDateFilter(e.target.value)} className="rounded-lg border bg-surface px-3 py-2.5 text-sm font-semibold" placeholder="Fecha (ej. 28 sep)" />
         </div>
@@ -273,6 +292,8 @@ function Backoffice() {
       {detailRequest ? <>
         <div className="mt-4 grid grid-cols-2 gap-2 text-sm">
           <InfoBox label="Paciente" value={detailRequest.patient} /><InfoBox label="Documento" value={detailRequest.patientDoc} />
+          {detailRequest.requesterName && <><InfoBox label="Solicitante" value={detailRequest.requesterName} /><InfoBox label="DNI solicitante" value={detailRequest.requesterDoc ?? ""} /></>}
+          {detailRequest.originHospital && <InfoBox label="Hospital de procedencia" value={detailRequest.originHospital} />}
           <InfoBox label="Grupo y Rh" value={`${detailRequest.blood}${detailRequest.rh}`} /><InfoBox label="Urgencia" value={detailRequest.urgency} />
           <InfoBox label="Unidades requeridas" value={String(detailRequest.units)} /><InfoBox label="Atendidas" value={String(detailRequest.fulfilled)} />
           <InfoBox label="Pendientes" value={String(detailRequest.units - detailRequest.fulfilled)} /><InfoBox label="Estado" value={detailRequest.status} />
@@ -286,8 +307,10 @@ function Backoffice() {
         <Button className="mt-5" variant="outline" onClick={() => setDetail(null)}>Cerrar detalle</Button>
       </> : <form className="mt-5 space-y-4" onSubmit={save}>
         {dialog === "request" && <>
-          <label className="block text-sm font-bold">Nombre del paciente<input required name="name" className="mt-2 w-full rounded-lg border p-3" placeholder="Nombres y apellidos" /></label>
-          <label className="block text-sm font-bold">DNI del paciente<input required name="patientDoc" className="mt-2 w-full rounded-lg border p-3" placeholder="Documento" /></label>
+          <DniField label="DNI del paciente" name="patientDoc" />
+          <DniField label="DNI del solicitante" name="requesterDoc" />
+          <label className="block text-sm font-bold">Hospital de procedencia<input required name="origin" maxLength={120} className="mt-2 w-full rounded-lg border p-3" placeholder="Hospital que realiza la solicitud" /></label>
+          {notice && <p role="alert" className="text-sm font-bold text-destructive">{notice}</p>}
           <div className="grid grid-cols-2 gap-3">
             <label className="block text-sm font-bold">Grupo sanguíneo<select name="blood" className="mt-2 w-full rounded-lg border bg-surface p-3">{["O+", "O-", "A+", "A-", "B+", "B-", "AB+", "AB-"].map(x => <option key={x}>{x}</option>)}</select></label>
             <label className="block text-sm font-bold">Unidades<input name="units" type="number" min="1" max="20" defaultValue="1" required className="mt-2 w-full rounded-lg border p-3" /></label>
