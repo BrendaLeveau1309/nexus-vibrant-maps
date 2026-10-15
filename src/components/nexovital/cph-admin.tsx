@@ -1,13 +1,14 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { CalendarDays, CheckCircle2, HeartHandshake, Megaphone, Send, Users, X } from "lucide-react";
+import { Archive, CalendarDays, CheckCircle2, HeartHandshake, Megaphone, Send, Users, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { hospitalInterests, loadCph, saveCph, setAttendance, subscribeCph, type Campaign, type CphState } from "@/lib/cph-store";
+import { closeCampaign, hospitalInterests, isFinished, loadCph, saveCph, setAttendance, subscribeCph, type Campaign, type CphState } from "@/lib/cph-store";
 
 export function CphAdmin({ hospital }: { hospital: string }) {
   const [state, setState] = useState<CphState | null>(null);
-  const [filter, setFilter] = useState<"Todas" | "BORRADOR" | "PUBLICADA">("Todas");
+  const [filter, setFilter] = useState<"Todas" | "BORRADOR" | "PUBLICADA" | "Historial">("Todas");
   const [creating, setCreating] = useState(false);
   const [publishing, setPublishing] = useState<Campaign | null>(null);
+  const [closing, setClosing] = useState<Campaign | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
   const [showInterested, setShowInterested] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
@@ -18,10 +19,12 @@ export function CphAdmin({ hospital }: { hospital: string }) {
   const own = state.campaigns.filter(c => c.establishment === hospital);
   const interested = hospitalInterests(state, hospital);
   const waiting = interested.filter(i => i.status === "En espera").length;
-  const list = own.filter(c => filter === "Todas" || c.status === filter);
+  const today = new Date().toISOString().slice(0, 10);
+  const statusOf = (c: Campaign) => isFinished(c, today) ? "FINALIZADA" : c.status;
+  const list = own.filter(c => filter === "Todas" || (filter === "Historial" ? statusOf(c) === "FINALIZADA" : statusOf(c) === filter));
   const confirmed = own.reduce((n, c) => n + c.participants.filter(p => p.status === "CONFIRMADO").length, 0);
   const current = selected ? state.campaigns.find(c => c.id === selected) : null;
-  const today = new Date().toISOString().slice(0, 10);
+  const canMark = (c: Campaign) => c.status !== "BORRADOR" && c.date <= today;
 
   const create = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -45,13 +48,13 @@ export function CphAdmin({ hospital }: { hospital: string }) {
     <p className="text-muted-foreground">Campañas de células progenitoras hematopoyéticas de {hospital}.</p>
     {msg && <p role="status" className={`mt-5 rounded-lg p-3 text-sm font-bold ${msg.ok ? "bg-accent text-accent-foreground" : "bg-destructive/10 text-destructive"}`}>{msg.text}</p>}
     <div className="mt-6 grid gap-4 sm:grid-cols-3">
-      {([[interested.length, "Interesados en este hospital", HeartHandshake, "tint-primary"], [own.filter(c => c.status === "PUBLICADA").length, "Campañas publicadas", Megaphone, "tint-teal"], [confirmed, "Participantes confirmados", Users, "tint-gold"]] as const).map(([v, l, Icon, t]) =>
+      {([[interested.length, "Interesados en este hospital", HeartHandshake, "tint-primary"], [own.filter(c => statusOf(c) === "PUBLICADA").length, "Campañas activas", Megaphone, "tint-teal"], [confirmed, "Participantes confirmados", Users, "tint-gold"]] as const).map(([v, l, Icon, t]) =>
         <article key={l} className={`rounded-xl border p-6 shadow-sm ${t}`}><Icon className="size-5 text-primary" /><p className="mt-3 text-3xl font-extrabold">{v}</p><p className="text-sm text-muted-foreground">{l}</p>{l === "Interesados en este hospital" && <><p className="mt-1 text-xs font-bold text-warning">{waiting} en espera de campaña</p><Button size="sm" variant="outline" className="mt-3" onClick={() => setShowInterested(true)}>Ver interesados</Button></>}</article>)}
     </div>
     <p className="mt-2 text-xs text-muted-foreground">Solo se cuentan donantes que eligieron este hospital como preferencia. El interés activo no equivale a participación confirmada en una campaña.</p>
 
     <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
-      <div className="flex gap-1">{(["Todas", "BORRADOR", "PUBLICADA"] as const).map(f => <Button key={f} size="sm" variant={filter === f ? "default" : "outline"} onClick={() => setFilter(f)}>{f}</Button>)}</div>
+      <div className="flex gap-1">{(["Todas", "BORRADOR", "PUBLICADA", "Historial"] as const).map(f => <Button key={f} size="sm" variant={filter === f ? "default" : "outline"} onClick={() => setFilter(f)}>{f}</Button>)}</div>
       <Button variant="vivid" onClick={() => { setMsg(null); setCreating(true); }}><Megaphone />Nueva campaña</Button>
     </div>
     <div className="mt-4 overflow-x-auto rounded-xl border bg-card">
@@ -60,9 +63,10 @@ export function CphAdmin({ hospital }: { hospital: string }) {
         <tbody>{list.map(c => <tr key={c.id} className="border-t">
           <td className="p-3 font-bold">{c.name}</td><td className="p-3">{c.establishment}</td><td className="p-3">{c.date} · {c.time}</td>
           <td className="p-3">{c.participants.length}/{c.capacity}</td>
-          <td className="p-3"><span className={`rounded-full px-2 py-0.5 text-[11px] font-extrabold ${c.status === "PUBLICADA" ? "bg-success/15 text-success" : "bg-muted text-muted-foreground"}`}>{c.status}</span></td>
+          <td className="p-3"><span className={`rounded-full px-2 py-0.5 text-[11px] font-extrabold ${statusOf(c) === "PUBLICADA" ? "bg-success/15 text-success" : statusOf(c) === "FINALIZADA" ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}>{statusOf(c)}</span></td>
           <td className="p-3 text-right"><div className="flex justify-end gap-2">
             {c.status === "BORRADOR" && <Button size="sm" variant="vivid" onClick={() => setPublishing(c)}><Send />Publicar</Button>}
+            {statusOf(c) === "PUBLICADA" && <Button size="sm" variant="destructive" onClick={() => setClosing(c)}><Archive />Cerrar campaña</Button>}
             <Button size="sm" variant="outline" onClick={() => setSelected(c.id)}>Participantes</Button>
           </div></td>
         </tr>)}
@@ -72,11 +76,11 @@ export function CphAdmin({ hospital }: { hospital: string }) {
 
     {current && <section className="mt-6 rounded-xl border bg-card p-5">
       <div className="flex items-center justify-between"><h3 className="text-lg font-extrabold">Participantes · {current.name}</h3><Button size="icon" variant="ghost" aria-label="Cerrar" onClick={() => setSelected(null)}><X /></Button></div>
-      <p className="text-xs text-muted-foreground">{current.date === today ? "Hoy es el día de la campaña: registra la asistencia de los confirmados." : "La asistencia se registra el día de la campaña."}</p>
+      <p className="text-xs text-muted-foreground">{canMark(current) ? (statusOf(current) === "FINALIZADA" ? "Campaña finalizada: aún puedes registrar o corregir la asistencia." : "Registra la asistencia de los confirmados (también puedes hacerlo después del evento).") : "La asistencia se habilita desde el día de la campaña."}</p>
       {current.participants.filter(p => p.status === "CONFIRMADO").length === 0 && <p className="mt-4 text-sm text-muted-foreground">Aún no hay participantes confirmados.</p>}
       <div className="mt-3 divide-y">{current.participants.filter(p => p.status === "CONFIRMADO").map(p => <div key={p.id} className="flex flex-wrap items-center justify-between gap-2 py-3 text-sm">
         <span className="font-semibold">{p.name} <span className={`ml-2 rounded-full px-2 py-0.5 text-[10px] font-extrabold ${p.status === "CONFIRMADO" ? "bg-chart-teal/15 text-chart-teal" : "bg-muted text-muted-foreground"}`}>{p.status}</span></span>
-        {p.status === "CONFIRMADO" && (current.date === today
+        {p.status === "CONFIRMADO" && (canMark(current)
           ? <div className="flex gap-2">{(["ASISTIO", "NO_ASISTIO"] as const).map(a => <Button key={a} size="sm" variant={p.attendance === a ? "default" : "outline"} onClick={() => { update(setAttendance(state, current.id, p.id, a)); setMsg({ ok: true, text: `Asistencia registrada: ${p.name} · ${a}` }); }}>{a === "ASISTIO" ? <CheckCircle2 /> : <X />}{a}</Button>)}</div>
           : <span className="text-xs font-bold text-muted-foreground">{p.attendance ?? "Pendiente"}</span>)}
       </div>)}</div>
@@ -99,6 +103,11 @@ export function CphAdmin({ hospital }: { hospital: string }) {
         <span><b>{i.name}</b><span className="block text-xs text-muted-foreground">Registro: {i.registeredAt}</span></span>
         <span className={`rounded-full px-2 py-0.5 text-[11px] font-extrabold ${i.status === "Inscrito" ? "bg-success/15 text-success" : "bg-warning/15 text-warning"}`}>{i.status}</span>
       </div>)}</div>
+    </Dialog>}
+    {closing && <Dialog title="Cerrar campaña" onClose={() => setClosing(null)}>
+      <p className="text-sm text-muted-foreground">“{closing.name}” pasará al historial como FINALIZADA y no aceptará nuevas confirmaciones. Podrás seguir registrando la asistencia.</p>
+      <p className="mt-2 text-xs text-muted-foreground">Si olvidas cerrarla, se finaliza automáticamente al pasar su fecha.</p>
+      <div className="mt-4 flex gap-2"><Button variant="outline" className="flex-1" onClick={() => setClosing(null)}>Cancelar</Button><Button variant="destructive" className="flex-1" onClick={() => { update(closeCampaign(state, closing.id)); setMsg({ ok: true, text: `“${closing.name}” se cerró y pasó al historial.` }); setClosing(null); }}><Archive />Cerrar campaña</Button></div>
     </Dialog>}
     {publishing && <Dialog title="Publicar campaña" onClose={() => setPublishing(null)}>
       <p className="text-sm text-muted-foreground">“{publishing.name}” pasará a PUBLICADA, será visible en la app móvil y se notificará a los usuarios con interés activo.</p>
