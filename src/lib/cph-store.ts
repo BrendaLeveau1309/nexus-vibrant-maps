@@ -1,6 +1,6 @@
 // Demo store for CPH (células progenitoras hematopoyéticas) campaigns, shared by the
 // mobile app and the hospital platform through localStorage + storage events.
-export type CampaignStatus = "BORRADOR" | "PUBLICADA";
+export type CampaignStatus = "BORRADOR" | "PUBLICADA" | "FINALIZADA";
 export type ParticipantStatus = "PREINSCRITO" | "CONFIRMADO";
 export type Attendance = "ASISTIO" | "NO_ASISTIO" | null;
 export type Participant = { id: string; name: string; status: ParticipantStatus; attendance: Attendance };
@@ -13,7 +13,8 @@ export type Interest = { id: string; name: string; hospital: string; registeredA
 export type CphState = { interestedCount: number; myInterest: boolean; myHospital?: string; interests: Interest[]; campaigns: Campaign[] };
 export const CPH_HOSPITALS = ["Hospital Nacional Dos de Mayo", "Hospital Edgardo Rebagliati", "Hospital Arzobispo Loayza"];
 
-export const CPH_KEY = "nexovital-cph";
+export const CPH_KEY = "nexovital-cph-v2";
+const dayOffset = (n: number) => { const d = new Date(); d.setDate(d.getDate() + n); return d.toISOString().slice(0, 10); };
 export const DEMO_USER = { id: "demo-user", name: "Usuario demo" };
 
 const seed: CphState = {
@@ -28,17 +29,23 @@ const seed: CphState = {
   ],
   campaigns: [
     {
-      id: "cph-1", name: "Jornada informativa CPH", description: "Charla y orientación sobre la donación de células progenitoras.",
-      establishment: "Hospital Nacional Dos de Mayo", date: "2026-10-24", time: "09:00 - 13:00", capacity: 40, status: "PUBLICADA",
+      id: "cph-1", name: "Jornada CPH Dos de Mayo (hoy)", description: "Orientación y toma de muestra para el registro de donantes de CPH.",
+      establishment: "Hospital Nacional Dos de Mayo", date: dayOffset(0), time: "09:00 - 13:00", capacity: 40, status: "PUBLICADA",
       participants: [
         { id: "p1", name: "Lucía Paredes", status: "CONFIRMADO", attendance: null },
         { id: "p2", name: "Diego Salas", status: "PREINSCRITO", attendance: null },
         { id: "p3", name: "Rosa Medina", status: "CONFIRMADO", attendance: null },
+        { id: "i4", name: "Carlos Mendoza", status: "CONFIRMADO", attendance: null },
       ],
     },
     {
+      id: "cph-3", name: "Campaña CPH de fin de mes", description: "Nueva fecha para donantes en espera del Hospital Dos de Mayo.",
+      establishment: "Hospital Nacional Dos de Mayo", date: dayOffset(21), time: "08:00 - 12:00", capacity: 30, status: "PUBLICADA",
+      participants: [{ id: "i5", name: "Ana Quispe", status: "CONFIRMADO", attendance: null }],
+    },
+    {
       id: "cph-2", name: "Campaña CPH Lima Sur", description: "Campaña de difusión en coordinación con el establecimiento.",
-      establishment: "Hospital Edgardo Rebagliati", date: "2026-11-08", time: "08:00 - 12:00", capacity: 60, status: "BORRADOR",
+      establishment: "Hospital Edgardo Rebagliati", date: dayOffset(30), time: "08:00 - 12:00", capacity: 60, status: "BORRADOR",
       participants: [],
     },
   ],
@@ -76,7 +83,7 @@ export function isRegistered(s: CphState, userId: string): boolean {
 }
 /** Una campaña publicada cuya fecha ya pasó se considera finalizada (historial). */
 export function isFinished(c: Campaign, today: string = new Date().toISOString().slice(0, 10)): boolean {
-  return c.status === "PUBLICADA" && c.date < today;
+  return c.status === "FINALIZADA" || (c.status === "PUBLICADA" && c.date < today);
 }
 export function confirmAttendance(s: CphState, campaignId: string): CphState {
   if (isRegistered(s, DEMO_USER.id)) return s;
@@ -95,4 +102,14 @@ export function setAttendance(s: CphState, campaignId: string, participantId: st
   // No se puede marcar ASISTIO si ya quedó registrado en otra campaña.
   if (attendance === "ASISTIO" && s.campaigns.some(c => c.id !== campaignId && c.participants.some(p => p.id === participantId && p.attendance === "ASISTIO"))) return s;
   return { ...s, campaigns: s.campaigns.map(c => c.id !== campaignId ? c : { ...c, participants: c.participants.map(p => p.id === participantId && p.status === "CONFIRMADO" ? { ...p, attendance } : p) }) };
+}
+
+/** Cierre manual por el personal (prioritario); si se olvida, la fecha pasada la finaliza igual. */
+export function closeCampaign(s: CphState, campaignId: string): CphState {
+  return { ...s, campaigns: s.campaigns.map(c => c.id === campaignId && c.status === "PUBLICADA" ? { ...c, status: "FINALIZADA" } : c) };
+}
+/** Desactiva el interés del donante: deja de contar en la demanda del hospital. */
+export function deactivateInterest(s: CphState): CphState {
+  if (!s.myInterest) return s;
+  return { ...s, myInterest: false, myHospital: undefined, interestedCount: Math.max(0, s.interestedCount - 1), interests: s.interests.filter(i => i.id !== DEMO_USER.id) };
 }

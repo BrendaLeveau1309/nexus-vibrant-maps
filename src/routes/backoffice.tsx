@@ -22,7 +22,7 @@ const DNI_REGISTRY: Record<string, string> = {
   "45678912": "Juan Quispe Huamán", "46789123": "Lucía Ramos Torres", "40881234": "Miguel Flores Rojas", "71234560": "Rosa Paredes Díaz",
   "72345678": "Carmen Salazar Vega", "43219876": "Pedro Gutiérrez León", "70123456": "Andrea Castillo Ruiz", "44556677": "Luis Mendoza Chávez",
 };
-export const lookupDni = (dni: string) => DNI_REGISTRY[dni.replace(/\D/g, "")] ?? null;
+const lookupDni = (dni: string) => DNI_REGISTRY[dni.replace(/\D/g, "")] ?? null;
 function DniField({ label, name }: { label: string; name: string }) {
   const [v, setV] = useState("");
   const found = v.length === 8 ? lookupDni(v) : null;
