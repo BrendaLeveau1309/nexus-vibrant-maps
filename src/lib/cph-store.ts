@@ -67,14 +67,23 @@ export function registerInterest(s: CphState, hospital: string = CPH_HOSPITALS[0
 export function hospitalInterests(s: CphState, hospital: string) {
   return s.interests.filter(i => i.hospital === hospital).map(i => ({
     ...i,
-    status: s.campaigns.some(c => c.establishment === hospital && c.status === "PUBLICADA" && c.participants.some(p => p.id === i.id && p.status === "CONFIRMADO")) ? "Inscrito" as const : "En espera" as const,
+    status: isRegistered(s, i.id) ? "Registrado" as const : s.campaigns.some(c => c.establishment === hospital && c.status === "PUBLICADA" && c.participants.some(p => p.id === i.id && p.status === "CONFIRMADO")) ? "Inscrito" as const : "En espera" as const,
   }));
 }
+/** El registro CPH se hace una sola vez en la vida: si asistió a cualquier campaña, ya está registrado. */
+export function isRegistered(s: CphState, userId: string): boolean {
+  return s.campaigns.some(c => c.participants.some(p => p.id === userId && p.attendance === "ASISTIO"));
+}
+/** Una campaña publicada cuya fecha ya pasó se considera finalizada (historial). */
+export function isFinished(c: Campaign, today: string = new Date().toISOString().slice(0, 10)): boolean {
+  return c.status === "PUBLICADA" && c.date < today;
+}
 export function confirmAttendance(s: CphState, campaignId: string): CphState {
+  if (isRegistered(s, DEMO_USER.id)) return s;
   return {
     ...s,
     campaigns: s.campaigns.map(c => {
-      if (c.id !== campaignId || c.status !== "PUBLICADA") return c;
+      if (c.id !== campaignId || c.status !== "PUBLICADA" || isFinished(c)) return c;
       const existing = c.participants.find(p => p.id === DEMO_USER.id);
       if (existing) return { ...c, participants: c.participants.map(p => p.id === DEMO_USER.id ? { ...p, status: "CONFIRMADO" } : p) };
       if (c.participants.length >= c.capacity) return c;
@@ -83,5 +92,7 @@ export function confirmAttendance(s: CphState, campaignId: string): CphState {
   };
 }
 export function setAttendance(s: CphState, campaignId: string, participantId: string, attendance: Attendance): CphState {
+  // No se puede marcar ASISTIO si ya quedó registrado en otra campaña.
+  if (attendance === "ASISTIO" && s.campaigns.some(c => c.id !== campaignId && c.participants.some(p => p.id === participantId && p.attendance === "ASISTIO"))) return s;
   return { ...s, campaigns: s.campaigns.map(c => c.id !== campaignId ? c : { ...c, participants: c.participants.map(p => p.id === participantId && p.status === "CONFIRMADO" ? { ...p, attendance } : p) }) };
 }
