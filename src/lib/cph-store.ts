@@ -9,7 +9,9 @@ export type Campaign = {
   date: string; time: string; capacity: number; status: CampaignStatus;
   participants: Participant[];
 };
-export type CphState = { interestedCount: number; myInterest: boolean; campaigns: Campaign[] };
+export type Interest = { id: string; name: string; hospital: string; registeredAt: string };
+export type CphState = { interestedCount: number; myInterest: boolean; myHospital?: string; interests: Interest[]; campaigns: Campaign[] };
+export const CPH_HOSPITALS = ["Hospital Nacional Dos de Mayo", "Hospital Edgardo Rebagliati", "Hospital Arzobispo Loayza"];
 
 export const CPH_KEY = "nexovital-cph";
 export const DEMO_USER = { id: "demo-user", name: "Usuario demo" };
@@ -17,6 +19,13 @@ export const DEMO_USER = { id: "demo-user", name: "Usuario demo" };
 const seed: CphState = {
   interestedCount: 41,
   myInterest: false,
+  interests: [
+    { id: "p1", name: "Lucía Paredes", hospital: "Hospital Nacional Dos de Mayo", registeredAt: "2026-10-02" },
+    { id: "p3", name: "Rosa Medina", hospital: "Hospital Nacional Dos de Mayo", registeredAt: "2026-10-05" },
+    { id: "i4", name: "Carlos Mendoza", hospital: "Hospital Nacional Dos de Mayo", registeredAt: "2026-10-12" },
+    { id: "i5", name: "Ana Quispe", hospital: "Hospital Nacional Dos de Mayo", registeredAt: "2026-10-14" },
+    { id: "i6", name: "Jorge Ríos", hospital: "Hospital Edgardo Rebagliati", registeredAt: "2026-10-09" },
+  ],
   campaigns: [
     {
       id: "cph-1", name: "Jornada informativa CPH", description: "Charla y orientación sobre la donación de células progenitoras.",
@@ -37,7 +46,7 @@ const seed: CphState = {
 
 export function loadCph(): CphState {
   if (typeof window === "undefined") return seed;
-  try { const raw = localStorage.getItem(CPH_KEY); return raw ? (JSON.parse(raw) as CphState) : seed; } catch { return seed; }
+  try { const raw = localStorage.getItem(CPH_KEY); if (!raw) return seed; const st = JSON.parse(raw) as CphState; return { ...st, interests: st.interests ?? seed.interests }; } catch { return seed; }
 }
 export function saveCph(state: CphState) {
   localStorage.setItem(CPH_KEY, JSON.stringify(state));
@@ -49,8 +58,17 @@ export function subscribeCph(cb: () => void) {
   return () => { window.removeEventListener("storage", cb); window.removeEventListener("nexovital-cph", cb); };
 }
 
-export function registerInterest(s: CphState): CphState {
-  return s.myInterest ? s : { ...s, myInterest: true, interestedCount: s.interestedCount + 1 };
+export function registerInterest(s: CphState, hospital: string = CPH_HOSPITALS[0] as string): CphState {
+  if (s.myInterest) return s;
+  const interest: Interest = { id: DEMO_USER.id, name: DEMO_USER.name, hospital, registeredAt: new Date().toISOString().slice(0, 10) as string };
+  return { ...s, myInterest: true, myHospital: hospital, interestedCount: s.interestedCount + 1, interests: [...s.interests.filter(i => i.id !== DEMO_USER.id), interest] };
+}
+/** Interesados de un hospital con estado: Inscrito si confirmó cupo en una campaña publicada de ese hospital. */
+export function hospitalInterests(s: CphState, hospital: string) {
+  return s.interests.filter(i => i.hospital === hospital).map(i => ({
+    ...i,
+    status: s.campaigns.some(c => c.establishment === hospital && c.status === "PUBLICADA" && c.participants.some(p => p.id === i.id && p.status === "CONFIRMADO")) ? "Inscrito" as const : "En espera" as const,
+  }));
 }
 export function confirmAttendance(s: CphState, campaignId: string): CphState {
   return {

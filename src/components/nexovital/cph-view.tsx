@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { ArrowLeft, Bell, CalendarDays, CheckCircle2, Clock3, Info, MapPin, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import cphIllustration from "@/assets/cph-illustration.jpg";
-import { DEMO_USER, confirmAttendance, loadCph, registerInterest, saveCph, subscribeCph, type Campaign, type CphState } from "@/lib/cph-store";
+import { CPH_HOSPITALS, DEMO_USER, confirmAttendance, loadCph, registerInterest, saveCph, subscribeCph, type Campaign, type CphState } from "@/lib/cph-store";
 
 const steps = [
   ["Infórmate", "Conoce qué son las CPH y resuelve tus dudas con fuentes oficiales."],
@@ -16,10 +16,11 @@ export function CphView({ onBack }: { onBack: () => void }) {
   const [confirmInterest, setConfirmInterest] = useState(false);
   const [detail, setDetail] = useState<Campaign | null>(null);
   const [message, setMessage] = useState("");
+  const [hospital, setHospital] = useState<string>(CPH_HOSPITALS[0] as string);
 
   useEffect(() => { const r = () => setState(loadCph()); r(); return subscribeCph(r); }, []);
   if (!state) return null;
-  const published = state.campaigns.filter(c => c.status === "PUBLICADA");
+  const published = state.campaigns.filter(c => c.status === "PUBLICADA" && (!state.myHospital || c.establishment === state.myHospital));
   const mine = (c: Campaign) => c.participants.find(p => p.id === DEMO_USER.id);
   const update = (next: CphState) => { saveCph(next); setState(next); };
 
@@ -44,7 +45,7 @@ export function CphView({ onBack }: { onBack: () => void }) {
         <article className="rounded-xl border bg-card p-4">
           <p className="text-xs font-extrabold uppercase text-primary">Interés general</p>
           {state.myInterest
-            ? <p role="status" className="mt-2 flex items-center gap-2 text-sm font-bold text-success"><CheckCircle2 className="size-4" />Interés CPH: ACTIVO</p>
+            ? <p role="status" className="mt-2 flex items-center gap-2 text-sm font-bold text-success"><CheckCircle2 className="size-4" />Interés CPH: ACTIVO{state.myHospital ? ` · ${state.myHospital}` : ""}</p>
             : <p className="mt-2 text-sm text-muted-foreground">Aún no has manifestado interés.</p>}
           {state.myInterest && message === "interest" && <p role="status" className="mt-2 rounded-lg bg-success/15 p-3 text-xs font-bold text-success">¡Tu interés quedó registrado! Recibirás información sobre nuevas campañas CPH.</p>}
           {!state.myInterest && <Button className="mt-3 w-full" variant="vivid" size="lg" onClick={() => setConfirmInterest(true)}>Me interesa ser potencial donante de CPH</Button>}
@@ -64,7 +65,9 @@ export function CphView({ onBack }: { onBack: () => void }) {
 
       {confirmInterest && <Sheet title="Confirmar interés" onClose={() => setConfirmInterest(false)}>
         <p className="text-sm text-muted-foreground">Registraremos tu interés para recibir información y campañas CPH. Esto no es una inscripción oficial ni una evaluación médica.</p>
-        <Button className="mt-4 w-full" variant="vivid" onClick={() => { update(registerInterest(state)); setConfirmInterest(false); setMessage("interest"); }}>Confirmar interés</Button>
+        <label className="mt-4 block text-sm font-bold">Elige tu hospital de preferencia<select value={hospital} onChange={e => setHospital(e.target.value)} className="mt-1 w-full rounded-lg border bg-card px-3 py-2 font-normal">{CPH_HOSPITALS.map(h => <option key={h}>{h}</option>)}</select></label>
+        <p className="mt-1 text-xs text-muted-foreground">Solo recibirás campañas de este hospital.</p>
+        <Button className="mt-4 w-full" variant="vivid" onClick={() => { update(registerInterest(state, hospital)); setConfirmInterest(false); setMessage("interest"); }}>Confirmar interés</Button>
         <Button className="mt-2 w-full" variant="ghost" onClick={() => setConfirmInterest(false)}>Cancelar</Button>
       </Sheet>}
 
