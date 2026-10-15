@@ -16,7 +16,7 @@ export function CphView({ onBack }: { onBack: () => void }) {
   const [confirmInterest, setConfirmInterest] = useState(false);
   const [detail, setDetail] = useState<Campaign | null>(null);
   const [message, setMessage] = useState("");
-  const [hospital, setHospital] = useState(CPH_HOSPITALS[0]);
+  const [hospital, setHospital] = useState<string>(CPH_HOSPITALS[0] as string);
 
   useEffect(() => { const r = () => setState(loadCph()); r(); return subscribeCph(r); }, []);
   if (!state) return null;

@@ -58,9 +58,9 @@ export function subscribeCph(cb: () => void) {
   return () => { window.removeEventListener("storage", cb); window.removeEventListener("nexovital-cph", cb); };
 }
 
-export function registerInterest(s: CphState, hospital: string = CPH_HOSPITALS[0]): CphState {
+export function registerInterest(s: CphState, hospital: string = CPH_HOSPITALS[0] as string): CphState {
   if (s.myInterest) return s;
-  const interest: Interest = { id: DEMO_USER.id, name: DEMO_USER.name, hospital, registeredAt: new Date().toISOString().slice(0, 10) };
+  const interest: Interest = { id: DEMO_USER.id, name: DEMO_USER.name, hospital, registeredAt: new Date().toISOString().slice(0, 10) as string };
   return { ...s, myInterest: true, myHospital: hospital, interestedCount: s.interestedCount + 1, interests: [...s.interests.filter(i => i.id !== DEMO_USER.id), interest] };
 }
 /** Interesados de un hospital con estado: Inscrito si confirmó cupo en una campaña publicada de ese hospital. */
