@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import { ArrowLeft, Bell, CalendarDays, CheckCircle2, Clock3, Info, MapPin, Users } from "lucide-react";
+import { ArrowLeft, Award, Bell, Share2, CalendarDays, CheckCircle2, Clock3, Info, MapPin, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import cphIllustration from "@/assets/cph-illustration.jpg";
-import { CPH_HOSPITALS, DEMO_USER, confirmAttendance, loadCph, registerInterest, saveCph, subscribeCph, type Campaign, type CphState } from "@/lib/cph-store";
+import { CPH_HOSPITALS, DEMO_USER, confirmAttendance, deactivateInterest, isFinished, isRegistered, loadCph, registerInterest, saveCph, subscribeCph, type Campaign, type CphState } from "@/lib/cph-store";
 
 const steps = [
   ["Infórmate", "Conoce qué son las CPH y resuelve tus dudas con fuentes oficiales."],
@@ -20,8 +20,9 @@ export function CphView({ onBack }: { onBack: () => void }) {
 
   useEffect(() => { const r = () => setState(loadCph()); r(); return subscribeCph(r); }, []);
   if (!state) return null;
-  const published = state.campaigns.filter(c => c.status === "PUBLICADA" && (!state.myHospital || c.establishment === state.myHospital));
+  const published = state.campaigns.filter(c => c.status === "PUBLICADA" && !isFinished(c) && (!state.myHospital || c.establishment === state.myHospital));
   const mine = (c: Campaign) => c.participants.find(p => p.id === DEMO_USER.id);
+  const registered = isRegistered(state, DEMO_USER.id);
   const update = (next: CphState) => { saveCph(next); setState(next); };
 
   return (
@@ -42,13 +43,18 @@ export function CphView({ onBack }: { onBack: () => void }) {
         </article>
         <p className="flex gap-2 rounded-xl border border-warning/40 bg-warning/10 p-3 text-xs leading-relaxed"><Info className="size-4 shrink-0 text-warning" />Manifestar interés en NexoVital no equivale a una inscripción oficial en el registro de donantes ni garantiza tu aptitud para donar.</p>
 
+        {registered && <article role="status" className="rounded-xl border border-success/40 bg-success/10 p-4">
+          <p className="flex items-center gap-2 text-sm font-extrabold text-success"><Award className="size-5" />Registrado · Embajador CPH</p>
+          <p className="mt-1 text-xs text-muted-foreground">¡Ya formas parte del registro de donantes de CPH! Seguirás recibiendo avisos de campañas para compartirlas con tus familiares y amigos.</p>
+        </article>}
         <article className="rounded-xl border bg-card p-4">
           <p className="text-xs font-extrabold uppercase text-primary">Interés general</p>
           {state.myInterest
             ? <p role="status" className="mt-2 flex items-center gap-2 text-sm font-bold text-success"><CheckCircle2 className="size-4" />Interés CPH: ACTIVO{state.myHospital ? ` · ${state.myHospital}` : ""}</p>
             : <p className="mt-2 text-sm text-muted-foreground">Aún no has manifestado interés.</p>}
           {state.myInterest && message === "interest" && <p role="status" className="mt-2 rounded-lg bg-success/15 p-3 text-xs font-bold text-success">¡Tu interés quedó registrado! Recibirás información sobre nuevas campañas CPH.</p>}
-          {!state.myInterest && <Button className="mt-3 w-full" variant="vivid" size="lg" onClick={() => setConfirmInterest(true)}>Me interesa ser potencial donante de CPH</Button>}
+          {state.myInterest && !registered && <Button className="mt-3 w-full" variant="outline" onClick={() => { update(deactivateInterest(state)); setMessage(""); }}>Desactivar mi interés</Button>}
+          {!state.myInterest && !registered && <Button className="mt-3 w-full" variant="vivid" size="lg" onClick={() => setConfirmInterest(true)}>Me interesa ser potencial donante de CPH</Button>}
         </article>
 
         <div>
@@ -60,7 +66,6 @@ export function CphView({ onBack }: { onBack: () => void }) {
             {mine(c)?.status === "CONFIRMADO" && <span className="rounded-full bg-success/15 px-2 py-0.5 text-[10px] font-extrabold text-success">CONFIRMADO</span>}
           </Button>)}
         </div>
-        <Button variant="outline" className="w-full" onClick={onBack}><ArrowLeft />Volver</Button>
       </div>
 
       {confirmInterest && <Sheet title="Confirmar interés" onClose={() => setConfirmInterest(false)}>
@@ -84,7 +89,9 @@ export function CphView({ onBack }: { onBack: () => void }) {
             <li className="flex gap-2"><Users className="size-4 text-primary" />{c.participants.length} / {c.capacity} cupos</li>
           </ul>
           <p className="mt-3 text-xs text-muted-foreground">Confirmar asistencia registra tu participación en esta campaña; es distinto de tu interés general.</p>
-          {me?.status === "CONFIRMADO"
+          {registered
+            ? <Button className="mt-4 w-full" variant="vivid" onClick={() => { const t = `${c.name} · ${c.establishment} · ${c.date}. ¡Súmate como donante de CPH!`; if (navigator.share) navigator.share({ text: t }).catch(() => {}); else navigator.clipboard?.writeText(t); setMessage("Comparte esta campaña con tus amigos y familiares."); }}><Share2 />Compartir campaña</Button>
+            : me?.status === "CONFIRMADO"
             ? <p role="status" className="mt-4 flex items-center justify-center gap-2 rounded-lg bg-success/15 p-3 text-sm font-extrabold text-success"><CheckCircle2 className="size-5" />Asistencia CONFIRMADA</p>
             : <Button className="mt-4 w-full" variant="vivid" disabled={full} onClick={() => { update(confirmAttendance(state, c.id)); setMessage("¡Tu asistencia quedó confirmada!"); }}>{full ? "Campaña sin cupos" : "Confirmar asistencia"}</Button>}
           {message && <p role="status" className="mt-2 text-center text-xs font-bold text-success">{message}</p>}
