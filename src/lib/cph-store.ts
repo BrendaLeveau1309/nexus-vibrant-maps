@@ -13,7 +13,7 @@ export type Interest = { id: string; name: string; hospital: string; registeredA
 export type CphState = { interestedCount: number; myInterest: boolean; myHospital?: string | undefined; interests: Interest[]; campaigns: Campaign[] };
 export const CPH_HOSPITALS = ["Hospital Nacional Dos de Mayo", "Hospital Edgardo Rebagliati", "Hospital Arzobispo Loayza"];
 
-export const CPH_KEY = "nexovital-cph-v2";
+export const CPH_KEY = "nexovital-cph-v3";
 const dayOffset = (n: number) => { const d = new Date(); d.setDate(d.getDate() + n); return d.toISOString().slice(0, 10); };
 export const DEMO_USER = { id: "demo-user", name: "Usuario demo" };
 
@@ -42,6 +42,15 @@ const seed: CphState = {
       id: "cph-3", name: "Campaña CPH de fin de mes", description: "Nueva fecha para donantes en espera del Hospital Dos de Mayo.",
       establishment: "Hospital Nacional Dos de Mayo", date: dayOffset(21), time: "08:00 - 12:00", capacity: 30, status: "PUBLICADA",
       participants: [{ id: "i5", name: "Ana Quispe", status: "CONFIRMADO", attendance: null }],
+    },
+    {
+      id: "cph-0", name: "Jornada CPH Dos de Mayo (finalizada)", description: "Campaña anterior ya cerrada; su asistencia quedó registrada.",
+      establishment: "Hospital Nacional Dos de Mayo", date: dayOffset(-14), time: "09:00 - 13:00", capacity: 25, status: "FINALIZADA",
+      participants: [
+        { id: "f1", name: "Marta Huamán", status: "CONFIRMADO", attendance: "ASISTIO" },
+        { id: "f2", name: "Pedro Castillo", status: "CONFIRMADO", attendance: "NO_ASISTIO" },
+        { id: "f3", name: "Elena Torres", status: "CONFIRMADO", attendance: "ASISTIO" },
+      ],
     },
     {
       id: "cph-2", name: "Campaña CPH Lima Sur", description: "Campaña de difusión en coordinación con el establecimiento.",
@@ -99,6 +108,10 @@ export function confirmAttendance(s: CphState, campaignId: string): CphState {
   };
 }
 export function setAttendance(s: CphState, campaignId: string, participantId: string, attendance: Attendance): CphState {
+  // Solo se registra asistencia en campañas activas (publicadas, desde su fecha y no finalizadas).
+  const target = s.campaigns.find(c => c.id === campaignId);
+  const today = new Date().toISOString().slice(0, 10);
+  if (!target || target.status !== "PUBLICADA" || isFinished(target, today) || target.date > today) return s;
   // No se puede marcar ASISTIO si ya quedó registrado en otra campaña.
   if (attendance === "ASISTIO" && s.campaigns.some(c => c.id !== campaignId && c.participants.some(p => p.id === participantId && p.attendance === "ASISTIO"))) return s;
   return { ...s, campaigns: s.campaigns.map(c => c.id !== campaignId ? c : { ...c, participants: c.participants.map(p => p.id === participantId && p.status === "CONFIRMADO" ? { ...p, attendance } : p) }) };

@@ -20,4 +20,12 @@ describe("CPH campaigns", () => {
     expect(s.myInterest).toBe(false);
     expect(s.interests.some(i => i.id === "demo-user")).toBe(false);
   });
+  it("attendance cannot be marked in a finished campaign", () => {
+    const s = setAttendance(closeCampaign(loadCph(), "cph-1"), "cph-1", "p1", "ASISTIO");
+    expect(s.campaigns.find(c => c.id === "cph-1")!.participants.find(p => p.id === "p1")!.attendance).toBe(null);
+  });
+  it("attendance can be marked in an active campaign", () => {
+    const s = setAttendance(loadCph(), "cph-1", "p1", "ASISTIO");
+    expect(s.campaigns.find(c => c.id === "cph-1")!.participants.find(p => p.id === "p1")!.attendance).toBe("ASISTIO");
+  });
 });
