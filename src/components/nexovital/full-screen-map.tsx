@@ -20,6 +20,15 @@ type GoogleMapLike = {
   getZoom: () => number | undefined;
 };
 
+type LeafletMapLike = { setView: (c: [number, number], z?: number) => LeafletMapLike; setZoom: (z: number) => void; getZoom: () => number };
+type LeafletLayerLike = { addTo: (m: LeafletMapLike) => LeafletLayerLike; bindTooltip: (t: string) => LeafletLayerLike; on: (e: string, h: () => void) => LeafletLayerLike };
+type LeafletLike = {
+  map: (el: HTMLElement, o: Record<string, unknown>) => LeafletMapLike;
+  tileLayer: (url: string, o: Record<string, unknown>) => LeafletLayerLike;
+  circleMarker: (p: [number, number], o: Record<string, unknown>) => LeafletLayerLike;
+  marker: (p: [number, number], o: Record<string, unknown>) => LeafletLayerLike;
+};
+
 const locations = [
   { name: "Hospital Nacional Dos de Mayo", type: "Hospital", hours: "Lun–vie, 8:00–17:00", position: { lat: -12.0569, lng: -77.0154 } },
   { name: "Banco de Sangre Rebagliati", type: "Banco de sangre", hours: "Lun–sáb, 7:00–16:00", position: { lat: -12.0786, lng: -77.0407 } },
@@ -59,24 +68,62 @@ export function FullScreenMap() {
       setReady(true);
     };
 
+    const useFallback = () => {
+      if (cancelled || fallbackStarted || !containerRef.current) return;
+      fallbackStarted = true;
+      containerRef.current.innerHTML = "";
+      const start = () => {
+        const L = (window as unknown as { L?: LeafletLike }).L;
+        if (cancelled || !L || !containerRef.current) { setMapUnavailable(true); return; }
+        const map = L.map(containerRef.current, { zoomControl: false, attributionControl: true }).setView([userPosition.lat, userPosition.lng], 13);
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "© OpenStreetMap" }).addTo(map);
+        L.circleMarker([userPosition.lat, userPosition.lng], { radius: 9, color: "#ffffff", weight: 3, fillColor: "#bb2441", fillOpacity: 1 }).addTo(map).bindTooltip("Tu ubicación");
+        locations.forEach((location) => {
+          L.marker([location.position.lat, location.position.lng], { title: location.name }).addTo(map).on("click", () => setSelected(location));
+        });
+        mapRef.current = {
+          setCenter: (c) => map.setView([c.lat, c.lng], map.getZoom()),
+          setZoom: (z) => map.setZoom(z),
+          getZoom: () => map.getZoom(),
+        };
+        setReady(true);
+      };
+      if (!document.querySelector('link[data-leaflet]')) {
+        const css = document.createElement("link");
+        css.rel = "stylesheet"; css.dataset["leaflet"] = "true";
+        css.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
+        document.head.appendChild(css);
+      }
+      if ((window as unknown as { L?: unknown }).L) { start(); return; }
+      const s = document.createElement("script");
+      s.src = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
+      s.onload = start;
+      s.onerror = () => setMapUnavailable(true);
+      document.head.appendChild(s);
+    };
+    let fallbackStarted = false;
+    (window as unknown as { gm_authFailure?: () => void }).gm_authFailure = () => { setReady(false); mapRef.current = null; useFallback(); };
+    const timeout = window.setTimeout(() => { if (!window.google?.maps) useFallback(); }, 8000);
+
     if (window.google?.maps) initialize();
     else {
       window.initNexoVitalMap = initialize;
       const key = import.meta.env["VITE_LOVABLE_CONNECTOR_GOOGLE_MAPS_BROWSER_KEY"];
       const channel = import.meta.env["VITE_LOVABLE_CONNECTOR_GOOGLE_MAPS_TRACKING_ID"];
-      if (!key) { setMapUnavailable(true); return; }
+      if (!key) { useFallback(); return () => { cancelled = true; window.clearTimeout(timeout); }; }
       const existing = document.querySelector('script[data-nexovital-map="true"]');
       if (!existing) {
         const script = document.createElement("script");
         script.dataset["nexovitalMap"] = "true";
         script.async = true;
-        script.onerror = () => setMapUnavailable(true);
+        script.onerror = () => useFallback();
         script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(key)}&loading=async&callback=initNexoVitalMap&channel=${encodeURIComponent(channel ?? "nexovital")}`;
         document.head.appendChild(script);
       }
     }
     return () => {
       cancelled = true;
+      window.clearTimeout(timeout);
       delete window.initNexoVitalMap;
     };
   }, []);
