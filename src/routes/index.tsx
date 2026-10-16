@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { DonorCompatibility } from "@/components/nexovital/donor-compatibility";
 import { donorRank } from "@/lib/donor-recognition";
 import { CphView } from "@/components/nexovital/cph-view";
+import { SplashScreen } from "@/components/nexovital/splash-screen";
 
 export const Route = createFileRoute("/")({
   head: () => ({ meta: [
@@ -96,6 +97,7 @@ function NexoVitalApp() {
   };
 
   return (
+      <SplashScreen />
     <main className={`${darkMode ? "dark" : ""} mobile-app relative mx-auto h-[100svh] w-full max-w-[480px] overflow-hidden bg-mobile-canvas text-foreground shadow-panel`}>
       {view !== "home" && <header className="mobile-header absolute inset-x-0 top-0 z-20 flex h-[72px] items-center gap-3 bg-primary px-4 text-primary-foreground"><Button size="icon" variant="ghost" className="text-primary-foreground hover:bg-primary-foreground/15 hover:text-primary-foreground" aria-label="Abrir menú" onClick={() => setMenuOpen(true)}><Menu /></Button><div className="flex-1"><p className="text-base font-extrabold">NexoVital<span className="ml-1 text-secondary">.</span></p><p className="text-[10px] text-primary-foreground/80">{role === "donor" ? "Donante" : "Solicitante"}</p></div><Button size="icon" variant="ghost" className="text-primary-foreground hover:bg-primary-foreground/15 hover:text-primary-foreground" aria-label="Notificaciones" onClick={() => setMenuPanel("notifications")}><Bell /></Button></header>}
       {view === "home" && (
