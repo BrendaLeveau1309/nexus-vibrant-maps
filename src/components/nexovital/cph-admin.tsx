@@ -24,7 +24,7 @@ export function CphAdmin({ hospital }: { hospital: string }) {
   const list = own.filter(c => filter === "Todas" || (filter === "Historial" ? statusOf(c) === "FINALIZADA" : statusOf(c) === filter));
   const confirmed = own.reduce((n, c) => n + c.participants.filter(p => p.status === "CONFIRMADO").length, 0);
   const current = selected ? state.campaigns.find(c => c.id === selected) : null;
-  const canMark = (c: Campaign) => c.status !== "BORRADOR" && c.date <= today;
+  const canMark = (c: Campaign) => statusOf(c) === "PUBLICADA" && c.date <= today;
 
   const create = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -76,7 +76,7 @@ export function CphAdmin({ hospital }: { hospital: string }) {
 
     {current && <section className="mt-6 rounded-xl border bg-card p-5">
       <div className="flex items-center justify-between"><h3 className="text-lg font-extrabold">Participantes · {current.name}</h3><Button size="icon" variant="ghost" aria-label="Cerrar" onClick={() => setSelected(null)}><X /></Button></div>
-      <p className="text-xs text-muted-foreground">{canMark(current) ? (statusOf(current) === "FINALIZADA" ? "Campaña finalizada: aún puedes registrar o corregir la asistencia." : "Registra la asistencia de los confirmados (también puedes hacerlo después del evento).") : "La asistencia se habilita desde el día de la campaña."}</p>
+      <p className="text-xs text-muted-foreground">{statusOf(current) === "FINALIZADA" ? "Campaña finalizada: la asistencia ya no se puede modificar." : canMark(current) ? "Campaña activa: registra la asistencia de los confirmados." : "La asistencia se habilita el día de la campaña, mientras esté activa."}</p>
       {current.participants.filter(p => p.status === "CONFIRMADO").length === 0 && <p className="mt-4 text-sm text-muted-foreground">Aún no hay participantes confirmados.</p>}
       <div className="mt-3 divide-y">{current.participants.filter(p => p.status === "CONFIRMADO").map(p => <div key={p.id} className="flex flex-wrap items-center justify-between gap-2 py-3 text-sm">
         <span className="font-semibold">{p.name} <span className={`ml-2 rounded-full px-2 py-0.5 text-[10px] font-extrabold ${p.status === "CONFIRMADO" ? "bg-chart-teal/15 text-chart-teal" : "bg-muted text-muted-foreground"}`}>{p.status}</span></span>
@@ -105,7 +105,7 @@ export function CphAdmin({ hospital }: { hospital: string }) {
       </div>)}</div>
     </Dialog>}
     {closing && <Dialog title="Cerrar campaña" onClose={() => setClosing(null)}>
-      <p className="text-sm text-muted-foreground">“{closing.name}” pasará al historial como FINALIZADA y no aceptará nuevas confirmaciones. Podrás seguir registrando la asistencia.</p>
+      <p className="text-sm text-muted-foreground">“{closing.name}” pasará al historial como FINALIZADA: no aceptará nuevas confirmaciones ni cambios de asistencia. Registra la asistencia antes de cerrarla.</p>
       <p className="mt-2 text-xs text-muted-foreground">Si olvidas cerrarla, se finaliza automáticamente al pasar su fecha.</p>
       <div className="mt-4 flex gap-2"><Button variant="outline" className="flex-1" onClick={() => setClosing(null)}>Cancelar</Button><Button variant="destructive" className="flex-1" onClick={() => { update(closeCampaign(state, closing.id)); setMsg({ ok: true, text: `“${closing.name}” se cerró y pasó al historial.` }); setClosing(null); }}><Archive />Cerrar campaña</Button></div>
     </Dialog>}
