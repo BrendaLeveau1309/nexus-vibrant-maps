@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { Activity, Bell, CalendarDays, ChevronRight, Clock3, Droplets, Heart, HeartPulse, History, Home, LocateFixed, LogOut, Mail, Menu, Moon, Navigation, Phone, ShieldCheck, Share2, Star, Sun, UserRound, X } from "lucide-react";
+import { NexoLogo } from "@/components/nexovital/logo";
 import { Button } from "@/components/ui/button";
 import { FullScreenMap } from "@/components/nexovital/full-screen-map";
 import donationCare from "@/assets/donation-care.jpg";
@@ -106,6 +107,7 @@ function NexoVitalApp() {
           <header className="absolute inset-x-0 top-0 z-20">
             <div className="mobile-header flex items-center justify-between bg-primary px-3 py-3 text-primary-foreground shadow-brand">
               <Button size="icon" variant="ghost" className="text-primary-foreground hover:bg-primary-foreground/15 hover:text-primary-foreground" aria-label="Abrir menú" onClick={() => setMenuOpen(true)}><Menu /></Button>
+              <NexoLogo className="ml-1 size-9 text-primary-foreground" />
               <div className="min-w-0 flex-1 px-2">
                 <h1 className="truncate text-base font-extrabold text-primary-foreground">NexoVital</h1>
                 <p className="truncate text-xs font-bold text-primary-foreground/85">{role === "donor" ? "Donante" : "Solicitante"} · Hola, Valeria</p>
@@ -209,7 +211,7 @@ function AuthScreen({ mode, setMode, onDemo }: { mode: AuthMode; setMode: (mode:
   };
 
   return <main className="min-h-[100svh] bg-primary px-5 py-8 text-foreground"><div className="mx-auto flex min-h-[calc(100svh-4rem)] max-w-md flex-col justify-center">
-    <div className="mb-7 flex items-center justify-center gap-3"><div className="grid size-12 place-items-center rounded-lg bg-surface text-primary shadow-brand"><HeartPulse /></div><div><p className="text-2xl font-extrabold text-primary-foreground">NexoVital</p><p className="text-sm text-primary-foreground/80">Donar nos conecta</p></div></div>
+    <div className="mb-7 flex items-center justify-center gap-3"><NexoLogo className="size-14 text-primary-foreground" /><div><p className="text-2xl font-extrabold text-primary-foreground">NexoVital</p><p className="text-sm text-primary-foreground/80">Donar nos conecta</p></div></div>
     <section className="overflow-hidden rounded-lg bg-card shadow-panel">
       {mode === "login" && <div className="relative h-36 overflow-hidden"><img src={donationCare} alt="Atención durante una donación de sangre" width={1536} height={1024} className="h-full w-full object-cover object-[center_60%]" /><span className="absolute bottom-3 left-4 flex items-center gap-1.5 rounded-md bg-surface/95 px-2.5 py-1.5 text-xs font-semibold text-foreground"><HeartPulse className="size-3.5 text-primary" />Donar nos conecta</span></div>}
       <div className="p-6 sm:p-8">
@@ -435,7 +437,7 @@ function SideMenu({role,onRoleChange,darkMode,onToggleTheme,onClose,onLogout,onO
     { label: "Términos y condiciones", panel: "terms" },
     { label: "Política de privacidad", panel: "privacy" },
   ];
-  return <div className="absolute inset-0 z-50 bg-foreground/20" onClick={onClose}><aside className="h-full w-[84%] overflow-y-auto bg-surface p-5 text-foreground shadow-panel" onClick={e=>e.stopPropagation()}><div className="flex items-center justify-between"><b className="text-xl">NexoVital</b><Button size="icon" variant="ghost" aria-label="Cerrar" onClick={onClose}><X/></Button></div><div className="mt-8 rounded-lg bg-accent p-4"><p className="text-xs font-bold text-primary">MODO ACTUAL</p><p className="text-xl font-extrabold">{role==="donor"?"Donante":"Solicitante"}</p><Button className="mt-3 w-full" variant="outline" onClick={()=>{onRoleChange(role==="donor"?"requester":"donor");onClose();}}>Cambiar de modo</Button></div><Button variant="ghost" className="mt-4 w-full justify-start text-foreground" onClick={onToggleTheme}>{darkMode ? <Sun/> : <Moon/>}{darkMode ? "Modo claro" : "Modo oscuro"}</Button>{items.map(x=><Button variant="ghost" key={x.panel} onClick={()=>onOpen(x.panel)} className="flex h-auto w-full items-center justify-between border-b px-0 py-4 text-left text-sm font-semibold whitespace-normal">{x.label}<ChevronRight className="size-4"/></Button>)}<Button className="mt-8 w-full text-foreground" variant="ghost" onClick={onLogout}><LogOut/>Cerrar sesión</Button></aside></div>;
+  return <div className="absolute inset-0 z-50 bg-foreground/20" onClick={onClose}><aside className="h-full w-[84%] overflow-y-auto bg-surface p-5 text-foreground shadow-panel" onClick={e=>e.stopPropagation()}><div className="flex items-center justify-between"><b className="flex items-center gap-2 text-xl"><NexoLogo className="size-8 text-primary" />NexoVital</b><Button size="icon" variant="ghost" aria-label="Cerrar" onClick={onClose}><X/></Button></div><div className="mt-8 rounded-lg bg-accent p-4"><p className="text-xs font-bold text-primary">MODO ACTUAL</p><p className="text-xl font-extrabold">{role==="donor"?"Donante":"Solicitante"}</p><Button className="mt-3 w-full" variant="outline" onClick={()=>{onRoleChange(role==="donor"?"requester":"donor");onClose();}}>Cambiar de modo</Button></div><Button variant="ghost" className="mt-4 w-full justify-start text-foreground" onClick={onToggleTheme}>{darkMode ? <Sun/> : <Moon/>}{darkMode ? "Modo claro" : "Modo oscuro"}</Button>{items.map(x=><Button variant="ghost" key={x.panel} onClick={()=>onOpen(x.panel)} className="flex h-auto w-full items-center justify-between border-b px-0 py-4 text-left text-sm font-semibold whitespace-normal">{x.label}<ChevronRight className="size-4"/></Button>)}<Button className="mt-8 w-full text-foreground" variant="ghost" onClick={onLogout}><LogOut/>Cerrar sesión</Button></aside></div>;
 }
 
 function Modal({title,onClose,children}:{title:string;onClose:()=>void;children:React.ReactNode}){return <div className="absolute inset-0 z-50 grid place-items-end bg-foreground/30 p-4" role="dialog" aria-modal="true" aria-label={title}><div className="max-h-[85svh] w-full overflow-y-auto rounded-lg bg-surface p-5 text-foreground shadow-panel"><div className="flex justify-between"><h2 className="text-xl font-extrabold">{title}</h2><Button size="icon" variant="ghost" className="text-foreground" aria-label="Cerrar" onClick={onClose}><X/></Button></div>{children}</div></div>}
