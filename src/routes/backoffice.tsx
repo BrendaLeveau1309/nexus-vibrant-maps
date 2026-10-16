@@ -148,8 +148,7 @@ function Backoffice() {
         <span aria-hidden className="absolute -left-32 -top-32 size-96 rounded-full bg-primary-foreground/10" />
         <span aria-hidden className="absolute -bottom-40 -right-24 size-[28rem] rounded-full bg-primary-foreground/10" />
         <div className="relative text-center">
-          <div className="mx-auto flex justify-center gap-6"><span className="size-12 rounded-full bg-primary-foreground" /><span className="size-12 rounded-full bg-primary-foreground" /></div>
-          <NexoLogo className="mx-auto -mt-2 size-44 text-primary-foreground" />
+          <NexoLogo className="mx-auto block size-44 text-primary-foreground" />
           <h1 className="mt-4 text-6xl font-extrabold tracking-tight">NexoVital</h1>
           <p className="mt-3 text-xl text-primary-foreground/85">Plataforma de gestión de donaciones</p>
         </div>
