@@ -136,7 +136,7 @@ export function FullScreenMap() {
 
   return (
     <div className="absolute inset-0 bg-map-fallback" aria-label="Mapa interactivo de centros de donación">
-      <div ref={containerRef} className="h-full w-full" />
+      <div ref={containerRef} className="relative z-0 h-full w-full" />
       {!ready && (
         <div className="absolute inset-0 grid place-items-center bg-map-fallback">
           <div className="flex items-center gap-2 rounded-full bg-surface/90 px-4 py-2 text-sm font-semibold text-foreground shadow-panel">
