@@ -191,7 +191,7 @@ function NexoVitalApp() {
 }
 
 /** Marco de teléfono: bisel y sombra en monitores, pantalla completa en celulares. */
-function PhoneFrame({ children, scrollable = false }: { children: React.ReactNode; scrollable?: boolean }) {
+function PhoneFrame({ children, scrollable = false }: { children: ReactNode; scrollable?: boolean }) {
   return (
     <div className="flex min-h-[100svh] w-full items-center justify-center bg-zinc-950 sm:px-4 sm:py-6">
       <div className={`relative h-[100svh] w-full sm:h-[min(844px,calc(100svh-3rem))] sm:max-w-[390px] sm:rounded-[44px] sm:border-[10px] sm:border-zinc-800 sm:shadow-2xl ${scrollable ? "overflow-y-auto" : "overflow-hidden"}`}>
