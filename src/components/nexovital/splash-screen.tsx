@@ -26,7 +26,7 @@ export function SplashScreen() {
 
   if (phase === "done") return null;
   return (
-    <div aria-hidden="true" className={`absolute inset-0 z-[100] bg-primary transition-opacity duration-700 ease-out ${phase === "leaving" ? "pointer-events-none opacity-0" : "opacity-100"}`}>
+    <div aria-hidden="true" className={`fixed inset-0 z-[100] bg-primary transition-opacity duration-700 ease-out ${phase === "leaving" ? "pointer-events-none opacity-0" : "opacity-100"}`}>
       <video ref={ref} src={splash.url} muted playsInline autoPlay preload="auto" onEnded={finish} onError={finish} className={`h-full w-full object-cover transition-transform duration-700 ${phase === "leaving" ? "scale-105" : "scale-100"}`} />
     </div>
   );

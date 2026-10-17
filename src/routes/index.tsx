@@ -89,7 +89,7 @@ function NexoVitalApp() {
     return () => window.clearInterval(timer);
   }, [authenticated, showMatch, role]);
 
-  if (!authenticated) return <AuthScreen mode={authMode} setMode={setAuthMode} onDemo={() => setAuthenticated(true)} />;
+  if (!authenticated) return <><SplashScreen /><AuthScreen mode={authMode} setMode={setAuthMode} onDemo={() => setAuthenticated(true)} /></>;
 
   const startSearch = () => {
     if (!searchCode.trim()) return;
@@ -99,7 +99,6 @@ function NexoVitalApp() {
 
   return (
     <main className={`${darkMode ? "dark" : ""} mobile-app relative mx-auto h-[100svh] w-full max-w-[480px] overflow-hidden bg-mobile-canvas text-foreground shadow-panel`}>
-      <SplashScreen />
       {view !== "home" && <header className="mobile-header absolute inset-x-0 top-0 z-20 flex h-[72px] items-center gap-3 bg-primary px-4 text-primary-foreground"><Button size="icon" variant="ghost" className="text-primary-foreground hover:bg-primary-foreground/15 hover:text-primary-foreground" aria-label="Abrir menú" onClick={() => setMenuOpen(true)}><Menu /></Button><div className="flex-1"><p className="text-base font-extrabold">NexoVital<span className="ml-1 text-secondary">.</span></p><p className="text-[10px] text-primary-foreground/80">{role === "donor" ? "Donante" : "Solicitante"}</p></div><Button size="icon" variant="ghost" className="text-primary-foreground hover:bg-primary-foreground/15 hover:text-primary-foreground" aria-label="Notificaciones" onClick={() => setMenuPanel("notifications")}><Bell /></Button></header>}
       {view === "home" && (
         <>
@@ -269,6 +268,9 @@ function Tracking({ role }: { role: Role }) {
   const [openDonor, setOpenDonor] = useState<number | null>(0);
   const [confirmCancel, setConfirmCancel] = useState(false);
   const [cancelled, setCancelled] = useState(false);
+  const [quizOpen, setQuizOpen] = useState(false);
+  const [answers, setAnswers] = useState<Record<string, string> | null>(null);
+  useEffect(() => { try { const raw = localStorage.getItem(QUIZ_KEY); if (raw) setAnswers(JSON.parse(raw)); } catch { /* ignore */ } }, []);
 
   if (role === "requester") {
     const donors = [
@@ -304,7 +306,8 @@ function Tracking({ role }: { role: Role }) {
     </div>;
   }
 
-  return <div className="h-full overflow-y-auto px-5 pb-28 pt-28"><p className="text-xs font-extrabold uppercase text-primary">Seguimiento activo</p><h1 className="mt-2 text-2xl font-extrabold">Tu donación</h1><div className="mt-5 rounded-lg bg-primary p-5 text-primary-foreground shadow-brand"><p className="text-sm opacity-80">Hospital Dos de Mayo · 2.4 km</p><div className="mt-3 flex items-end justify-between"><span className="text-4xl font-extrabold">O+</span><span className="rounded-full bg-secondary px-3 py-1 text-xs font-extrabold text-secondary-foreground">Urgencia alta</span></div></div><div className="mt-7 space-y-0">{timeline.map((item,i)=><div key={item} className="flex gap-4"><div className="flex flex-col items-center"><span className={`grid size-8 place-items-center rounded-full ${i<=1?"bg-primary text-primary-foreground":"bg-muted text-muted-foreground"}`}>{i<1?"✓":i+1}</span>{i<timeline.length-1&&<span className={`h-12 w-0.5 ${i<1?"bg-primary":"bg-border"}`}/>}</div><div><p className="font-extrabold">{item}</p><p className="text-xs text-muted-foreground">{i===1?"Estado actual":i<1?"Completado":"Pendiente"}</p></div></div>)}</div>
+  return <div className="h-full overflow-y-auto px-5 pb-28 pt-28"><p className="text-xs font-extrabold uppercase text-primary">Seguimiento activo</p><h1 className="mt-2 text-2xl font-extrabold">Tu donación</h1><div className="mt-5 rounded-lg bg-primary p-5 text-primary-foreground shadow-brand"><p className="text-sm opacity-80">Hospital Dos de Mayo · 2.4 km</p><div className="mt-3 flex items-end justify-between"><span className="text-4xl font-extrabold">O+</span><span className="rounded-full bg-secondary px-3 py-1 text-xs font-extrabold text-secondary-foreground">Urgencia alta</span></div></div><div className="mt-7 space-y-0">{timeline.map((item,i)=><div key={item} className="flex gap-4"><div className="flex flex-col items-center"><span className={`grid size-8 place-items-center rounded-full ${i<=1?"bg-primary text-primary-foreground":"bg-muted text-muted-foreground"}`}>{i<1?"✓":i+1}</span>{i<timeline.length-1&&<span className={`${i===3?"h-24":"h-12"} w-0.5 ${i<1?"bg-primary":"bg-border"}`}/>}</div><div><p className="font-extrabold">{item}</p><p className="text-xs text-muted-foreground">{i===1?"Estado actual":i<1?"Completado":"Pendiente"}</p>{i===3&&<Button size="sm" variant="outline" className="mt-2" onClick={() => setQuizOpen(true)}>{answers ? "Ver mi código QR" : "Cuestionario predonación (opcional)"}</Button>}</div></div>)}</div>
+    {quizOpen && <PreDonationQuiz answers={answers} onSave={a => { setAnswers(a); localStorage.setItem(QUIZ_KEY, JSON.stringify(a)); }} onClose={() => setQuizOpen(false)} />}
     {cancelled ? <p role="status" className="mt-4 rounded-md bg-muted p-3 text-sm font-bold">Proceso cancelado. El solicitante fue notificado y podrá buscar nuevos donantes.</p> : confirmCancel ? <div className="mt-4 rounded-lg border border-destructive/40 bg-card p-4"><p className="text-sm font-bold">¿Seguro que deseas cancelar la donación? El solicitante será notificado.</p><div className="mt-3 grid grid-cols-2 gap-2"><Button variant="outline" onClick={() => setConfirmCancel(false)}>Volver</Button><Button variant="vivid" onClick={() => { setCancelled(true); setConfirmCancel(false); }}>Sí, cancelar</Button></div></div> : <Button className="mt-4 w-full" variant="outline" onClick={() => setConfirmCancel(true)}>Cancelar proceso</Button>}
   </div>;
 }
