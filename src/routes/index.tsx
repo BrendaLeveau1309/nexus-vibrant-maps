@@ -186,6 +186,18 @@ function NexoVitalApp() {
       {menuPanel === "terms" && <Modal title="Términos y condiciones" onClose={() => setMenuPanel(null)}><p className="text-sm text-muted-foreground">NexoVital conecta donantes voluntarios con solicitudes de sangre verificadas por establecimientos de salud registrados. El uso de la plataforma es gratuito y voluntario.</p></Modal>}
       {menuPanel === "privacy" && <Modal title="Política de privacidad" onClose={() => setMenuPanel(null)}><p className="text-sm text-muted-foreground">Tus datos personales y de salud solo se comparten con el establecimiento que atiende la solicitud que aceptaste. La identidad de donantes y solicitantes se mantiene anónima entre ambas partes.</p></Modal>}
     </main>
+    </PhoneFrame>
+  );
+}
+
+/** Marco de teléfono: bisel y sombra en monitores, pantalla completa en celulares. */
+function PhoneFrame({ children, scrollable = false }: { children: React.ReactNode; scrollable?: boolean }) {
+  return (
+    <div className="flex min-h-[100svh] w-full items-center justify-center bg-zinc-950 sm:px-4 sm:py-6">
+      <div className={`relative h-[100svh] w-full sm:h-[min(844px,calc(100svh-3rem))] sm:max-w-[390px] sm:rounded-[44px] sm:border-[10px] sm:border-zinc-800 sm:shadow-2xl ${scrollable ? "overflow-y-auto" : "overflow-hidden"}`}>
+        {children}
+      </div>
+    </div>
   );
 }
 
@@ -216,7 +228,7 @@ function AuthScreen({ mode, setMode, onDemo }: { mode: AuthMode; setMode: (mode:
     setMessage("Para ingresar con documento, primero crea tu cuenta con un correo válido."); setBusy(false);
   };
 
-  return <main className="min-h-[100svh] bg-primary px-5 py-8 text-foreground"><div className="mx-auto flex min-h-[calc(100svh-4rem)] max-w-md flex-col justify-center">
+  return <main className="min-h-full bg-primary px-5 py-8 text-foreground"><div className="mx-auto flex min-h-full max-w-md flex-col justify-center">
     <div className="mb-7 flex items-center justify-center gap-3"><NexoLogo className="size-14 text-primary-foreground" /><div><p className="text-2xl font-extrabold text-primary-foreground">NexoVital</p><p className="text-sm text-primary-foreground/80">Donar nos conecta</p></div></div>
     <section className="overflow-hidden rounded-lg bg-card shadow-panel">
       {mode === "login" && <div className="relative h-36 overflow-hidden"><img src={donationCare} alt="Atención durante una donación de sangre" width={1536} height={1024} className="h-full w-full object-cover object-[center_60%]" /><span className="absolute bottom-3 left-4 flex items-center gap-1.5 rounded-md bg-surface/95 px-2.5 py-1.5 text-xs font-semibold text-foreground"><HeartPulse className="size-3.5 text-primary" />Donar nos conecta</span></div>}
