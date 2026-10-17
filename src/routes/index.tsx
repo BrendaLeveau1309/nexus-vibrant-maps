@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Activity, Bell, CalendarDays, ChevronRight, Clock3, Droplets, Heart, HeartPulse, History, Home, LocateFixed, LogOut, Mail, Menu, Moon, Navigation, Phone, ShieldCheck, Share2, Star, Sun, UserRound, X } from "lucide-react";
 import { NexoLogo } from "@/components/nexovital/logo";
 import { Button } from "@/components/ui/button";
@@ -90,7 +90,12 @@ function NexoVitalApp() {
     return () => window.clearInterval(timer);
   }, [authenticated, showMatch, role]);
 
-  if (!authenticated) return <><SplashScreen /><AuthScreen mode={authMode} setMode={setAuthMode} onDemo={() => setAuthenticated(true)} /></>;
+  if (!authenticated) return (
+    <PhoneFrame scrollable>
+      <SplashScreen />
+      <AuthScreen mode={authMode} setMode={setAuthMode} onDemo={() => setAuthenticated(true)} />
+    </PhoneFrame>
+  );
 
   const startSearch = () => {
     if (!searchCode.trim()) return;
@@ -99,7 +104,8 @@ function NexoVitalApp() {
   };
 
   return (
-    <main className={`${darkMode ? "dark" : ""} mobile-app relative mx-auto h-[100svh] w-full max-w-[480px] overflow-hidden bg-mobile-canvas text-foreground shadow-panel`}>
+    <PhoneFrame>
+    <main className={`${darkMode ? "dark" : ""} mobile-app relative h-full w-full overflow-hidden bg-mobile-canvas text-foreground`}>
       {view !== "home" && <header className="mobile-header absolute inset-x-0 top-0 z-20 flex h-[72px] items-center gap-3 bg-primary px-4 text-primary-foreground"><Button size="icon" variant="ghost" className="text-primary-foreground hover:bg-primary-foreground/15 hover:text-primary-foreground" aria-label="Abrir menú" onClick={() => setMenuOpen(true)}><Menu /></Button><div className="flex-1"><p className="text-base font-extrabold">NexoVital<span className="ml-1 text-secondary">.</span></p><p className="text-[10px] text-primary-foreground/80">{role === "donor" ? "Donante" : "Solicitante"}</p></div><Button size="icon" variant="ghost" className="text-primary-foreground hover:bg-primary-foreground/15 hover:text-primary-foreground" aria-label="Notificaciones" onClick={() => setMenuPanel("notifications")}><Bell /></Button></header>}
       {view === "home" && (
         <>
@@ -180,6 +186,18 @@ function NexoVitalApp() {
       {menuPanel === "terms" && <Modal title="Términos y condiciones" onClose={() => setMenuPanel(null)}><p className="text-sm text-muted-foreground">NexoVital conecta donantes voluntarios con solicitudes de sangre verificadas por establecimientos de salud registrados. El uso de la plataforma es gratuito y voluntario.</p></Modal>}
       {menuPanel === "privacy" && <Modal title="Política de privacidad" onClose={() => setMenuPanel(null)}><p className="text-sm text-muted-foreground">Tus datos personales y de salud solo se comparten con el establecimiento que atiende la solicitud que aceptaste. La identidad de donantes y solicitantes se mantiene anónima entre ambas partes.</p></Modal>}
     </main>
+    </PhoneFrame>
+  );
+}
+
+/** Marco de teléfono: bisel y sombra en monitores, pantalla completa en celulares. */
+function PhoneFrame({ children, scrollable = false }: { children: ReactNode; scrollable?: boolean }) {
+  return (
+    <div className="flex min-h-[100svh] w-full items-center justify-center bg-zinc-950 sm:px-4 sm:py-6">
+      <div className={`relative h-[100svh] w-full sm:h-[min(844px,calc(100svh-3rem))] sm:max-w-[390px] sm:rounded-[44px] sm:border-[10px] sm:border-zinc-800 sm:shadow-2xl ${scrollable ? "overflow-y-auto" : "overflow-hidden"}`}>
+        {children}
+      </div>
+    </div>
   );
 }
 
@@ -210,7 +228,7 @@ function AuthScreen({ mode, setMode, onDemo }: { mode: AuthMode; setMode: (mode:
     setMessage("Para ingresar con documento, primero crea tu cuenta con un correo válido."); setBusy(false);
   };
 
-  return <main className="min-h-[100svh] bg-primary px-5 py-8 text-foreground"><div className="mx-auto flex min-h-[calc(100svh-4rem)] max-w-md flex-col justify-center">
+  return <main className="min-h-full bg-primary px-5 py-8 text-foreground"><div className="mx-auto flex min-h-full max-w-md flex-col justify-center">
     <div className="mb-7 flex items-center justify-center gap-3"><NexoLogo className="size-14 text-primary-foreground" /><div><p className="text-2xl font-extrabold text-primary-foreground">NexoVital</p><p className="text-sm text-primary-foreground/80">Donar nos conecta</p></div></div>
     <section className="overflow-hidden rounded-lg bg-card shadow-panel">
       {mode === "login" && <div className="relative h-36 overflow-hidden"><img src={donationCare} alt="Atención durante una donación de sangre" width={1536} height={1024} className="h-full w-full object-cover object-[center_60%]" /><span className="absolute bottom-3 left-4 flex items-center gap-1.5 rounded-md bg-surface/95 px-2.5 py-1.5 text-xs font-semibold text-foreground"><HeartPulse className="size-3.5 text-primary" />Donar nos conecta</span></div>}
