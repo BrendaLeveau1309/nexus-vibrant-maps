@@ -69,6 +69,7 @@
 @utility glass-panel { background: color-mix(in oklab, var(--surface) 92%, transparent); box-shadow: var(--shadow-panel); backdrop-filter: blur(16px); }
 @utility safe-bottom { padding-bottom: calc(0.75rem + env(safe-area-inset-bottom)); }
 @utility subtle-grid { background-image: linear-gradient(to right, color-mix(in oklab, var(--border) 35%, transparent) 1px, transparent 1px), linear-gradient(to bottom, color-mix(in oklab, var(--border) 35%, transparent) 1px, transparent 1px); background-size: 24px 24px; }
+@utility no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; &::-webkit-scrollbar { display: none; } }
 @utility tint-primary { background: color-mix(in oklab, var(--primary) 7%, var(--surface)); }
 @utility tint-teal { background: color-mix(in oklab, var(--chart-teal) 10%, var(--surface)); }
 @utility tint-gold { background: color-mix(in oklab, var(--chart-gold) 13%, var(--surface)); }
