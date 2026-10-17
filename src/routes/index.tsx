@@ -194,7 +194,7 @@ function NexoVitalApp() {
 function PhoneFrame({ children, scrollable = false }: { children: ReactNode; scrollable?: boolean }) {
   return (
     <div className="flex min-h-[100svh] w-full items-center justify-center bg-zinc-950 sm:px-4 sm:py-6">
-      <div className={`relative h-[100svh] w-full sm:h-[min(844px,calc(100svh-3rem))] sm:max-w-[390px] sm:rounded-[44px] sm:border-[10px] sm:border-zinc-800 sm:shadow-2xl ${scrollable ? "overflow-y-auto" : "overflow-hidden"}`}>
+      <div className={`relative h-[100svh] w-full sm:h-[min(960px,calc(100svh-2rem))] sm:max-w-[440px] sm:rounded-[48px] sm:border-[12px] sm:border-zinc-800 sm:shadow-2xl ${scrollable ? "overflow-y-auto no-scrollbar" : "overflow-hidden"}`}>
         {children}
       </div>
     </div>
