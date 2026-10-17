@@ -28,7 +28,8 @@ function DniField({ label, name }: { label: string; name: string }) {
   const [v, setV] = useState("");
   const found = v.length === 8 ? lookupDni(v) : null;
   return <label className="block text-sm font-bold">{label}<input required name={name} value={v} onChange={e => setV(e.target.value.replace(/\D/g, "").slice(0, 8))} inputMode="numeric" pattern="\d{8}" className="mt-2 w-full rounded-lg border p-3" placeholder="8 dígitos" />
-    {v.length === 8 && <span className={`mt-1 block text-xs font-semibold ${found ? "text-success" : "text-destructive"}`}>{found ?? "DNI no encontrado en el padrón"}</span>}</label>;
+    {v.length > 0 && v.length < 8 && <span className="mt-1 block text-xs font-semibold text-destructive">El DNI debe tener 8 dígitos</span>}
+    {v.length === 8 && (found ? <span className="mt-1 block text-xs font-semibold text-success">{found}</span> : <input required name={`${name}Name`} maxLength={120} className="mt-2 w-full rounded-lg border p-3 font-normal" placeholder="Nombres y apellidos" />)}</label>;
 }
 
 type DialogKind = "request" | "staff" | "center" | null;
@@ -120,8 +121,9 @@ function Backoffice() {
     const name = String(data.get("name") ?? "").trim();
     if (dialog === "request") {
       const patientDni = String(data.get("patientDoc") ?? ""), requesterDni = String(data.get("requesterDoc") ?? "");
-      const patientName = lookupDni(patientDni), requesterName = lookupDni(requesterDni);
-      if (!patientName || !requesterName) { setNotice("Verifica que ambos DNI estén registrados en el padrón."); return; }
+      const patientName = lookupDni(patientDni) ?? String(data.get("patientDocName") ?? "").trim(), requesterName = lookupDni(requesterDni) ?? String(data.get("requesterDocName") ?? "").trim();
+      if (!/^\d{8}$/.test(patientDni) || !/^\d{8}$/.test(requesterDni)) { setNotice("Cada DNI debe tener 8 dígitos."); return; }
+      if (!patientName || !requesterName) { setNotice("Escribe el nombre y apellido de cada DNI."); return; }
       const code = `NV-${Math.floor(10000 + Math.random() * 90000)}`;
       const blood = String(data.get("blood") ?? "O");
       setRequests(current => [{

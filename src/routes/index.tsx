@@ -10,6 +10,7 @@ import { DonorCompatibility } from "@/components/nexovital/donor-compatibility";
 import { donorRank } from "@/lib/donor-recognition";
 import { CphView } from "@/components/nexovital/cph-view";
 import { SplashScreen } from "@/components/nexovital/splash-screen";
+import { QRCodeSVG } from "qrcode.react";
 
 export const Route = createFileRoute("/")({
   head: () => ({ meta: [
@@ -448,3 +449,33 @@ function Info({label,value,urgent=false}:{label:string;value:string;urgent?:bool
 function NavItem({active,icon:Icon,label,onClick}:{active:boolean;icon:typeof Home;label:string;onClick:()=>void}){return <Button variant="ghost" aria-current={active ? "page" : undefined} onClick={onClick} className={`flex h-14 flex-col items-center justify-center gap-1 rounded-md text-[11px] font-bold ${active?"bg-primary-foreground/20 text-primary-foreground":"text-primary-foreground/75 hover:bg-primary-foreground/10 hover:text-primary-foreground"}`}><Icon className="size-5"/>{label}</Button>}
 function Field({label,name,type="text",placeholder}:{label:string;name:string;type?:string;placeholder:string}){return <label className="block text-sm font-bold">{label}<input name={name} type={type} required maxLength={255} placeholder={placeholder} className="mt-1.5 w-full rounded-md border bg-surface px-4 py-3 font-normal"/></label>}
 function FieldSelect({label,name,options}:{label:string;name:string;options:string[]}){return <label className="block text-sm font-bold">{label}<select name={name} className="mt-1.5 w-full rounded-md border bg-surface px-3 py-3 font-normal">{options.map(x=><option key={x}>{x}</option>)}</select></label>}
+
+const QUIZ_KEY = "nexovital-predonacion";
+const QUIZ = [
+  "¿Te sientes bien de salud hoy?",
+  "¿Has dormido al menos 6 horas anoche?",
+  "¿Has comido algo en las últimas 4 horas?",
+  "¿Has tenido fiebre, gripe o infección en los últimos 14 días?",
+  "¿Has tomado antibióticos u otros medicamentos en la última semana?",
+  "¿Te has hecho un tatuaje, piercing o acupuntura en los últimos 12 meses?",
+  "¿Has tenido alguna cirugía o transfusión en los últimos 12 meses?",
+  "¿Has consumido alcohol en las últimas 24 horas?",
+];
+function PreDonationQuiz({ answers, onSave, onClose }: { answers: Record<string, string> | null; onSave: (a: Record<string, string>) => void; onClose: () => void }) {
+  const [editing, setEditing] = useState(!answers);
+  const [draft, setDraft] = useState<Record<string, string>>(answers ?? {});
+  const complete = QUIZ.every((_, i) => draft[i]);
+  const code = `NX-TAMIZAJE-${(JSON.stringify(answers ?? {}).split("").reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7) % 100000000).toString().padStart(8, "0")}`;
+  return <Modal title={editing ? "Cuestionario predonación" : "Tu código de tamizaje"} onClose={onClose}>
+    {editing ? <div className="mt-4 space-y-4">
+      {QUIZ.map((q, i) => <fieldset key={q} className="rounded-md border p-3"><legend className="px-1 text-sm font-bold">{q}</legend><div className="mt-2 grid grid-cols-2 gap-2">{["Sí", "No"].map(opt => <Button key={opt} type="button" size="sm" variant={draft[i] === opt ? "default" : "outline"} onClick={() => setDraft({ ...draft, [i]: opt })}>{opt}</Button>)}</div></fieldset>)}
+      <Button className="w-full" disabled={!complete} onClick={() => { onSave(draft); setEditing(false); }}>Guardar respuestas</Button>
+      {!complete && <p className="text-center text-xs text-muted-foreground">Responde todas las preguntas para guardar.</p>}
+    </div> : <div className="mt-4 flex flex-col items-center gap-3 text-center">
+      <div className="rounded-lg bg-surface p-3 shadow-sm"><QRCodeSVG value={JSON.stringify({ code, donor: "DEMO", answers })} size={200} /></div>
+      <p className="font-mono text-sm font-extrabold">{code}</p>
+      <p className="text-sm text-muted-foreground">Muestra este código al personal del banco de sangre para verificar tus respuestas.</p>
+      <Button variant="outline" className="w-full" onClick={() => setEditing(true)}>Revisar o editar respuestas</Button>
+    </div>}
+  </Modal>;
+}
