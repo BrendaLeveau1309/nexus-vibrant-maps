@@ -16,3 +16,5 @@
 - Account reads the authenticated profile and successful donation count under existing RLS, with an explicitly labeled signed-out demo fallback, so donor identity and share text never silently substitute demo data for a real user.
 - Backoffice demo stage counters derive from the same persisted process records as the editor and refresh on storage events, so counts track stage transitions without a second source of truth.
 - Derive donor recognition and red-cell compatibility with pure shared helpers, and display compatibility separately from the carnet, so profile-specific rules remain testable without storing duplicate data.
+
+- The mobile app (login, splash, and main views) renders inside a shared `PhoneFrame` wrapper in src/routes/index.tsx: 390px phone bezel on desktop, full-bleed below the sm breakpoint. Overlays meant to fill the app screen use `absolute inset-0`, not `fixed`, so they stay inside the frame.
