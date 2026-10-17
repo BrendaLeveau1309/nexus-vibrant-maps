@@ -90,7 +90,12 @@ function NexoVitalApp() {
     return () => window.clearInterval(timer);
   }, [authenticated, showMatch, role]);
 
-  if (!authenticated) return <><SplashScreen /><AuthScreen mode={authMode} setMode={setAuthMode} onDemo={() => setAuthenticated(true)} /></>;
+  if (!authenticated) return (
+    <PhoneFrame scrollable>
+      <SplashScreen />
+      <AuthScreen mode={authMode} setMode={setAuthMode} onDemo={() => setAuthenticated(true)} />
+    </PhoneFrame>
+  );
 
   const startSearch = () => {
     if (!searchCode.trim()) return;
