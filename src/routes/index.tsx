@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Activity, Bell, CalendarDays, ChevronRight, Clock3, Droplets, Heart, HeartPulse, History, Home, LocateFixed, LogOut, Mail, Menu, Moon, Navigation, Phone, ShieldCheck, Share2, Star, Sun, UserRound, X } from "lucide-react";
 import { NexoLogo } from "@/components/nexovital/logo";
 import { Button } from "@/components/ui/button";
