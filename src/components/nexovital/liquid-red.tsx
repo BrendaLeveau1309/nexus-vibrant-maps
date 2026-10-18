@@ -46,7 +46,6 @@ export function LiquidRed() {
         rg.addColorStop(0, `rgba(255,120,130,${b.a})`); rg.addColorStop(0.7, `rgba(220,20,45,${b.a * 0.7})`); rg.addColorStop(1, "rgba(120,0,20,0)");
         ctx.fillStyle = rg; ctx.beginPath(); ctx.arc(b.x, b.y, r, 0, Math.PI * 2); ctx.fill();
       });
-      }
       if (!reduce) raf = requestAnimationFrame(tick);
     };
     tick();
