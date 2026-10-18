@@ -29,7 +29,7 @@ export function LiquidRed() {
       g.addColorStop(0, "#7a0614"); g.addColorStop(0.5, "#b3101f"); g.addColorStop(1, "#5c030e");
       ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
       blobs.forEach((b, i) => {
-        const p = phases[i];
+        const p = phases[i] ?? 0;
         const dx = b.x - mouse.x, dy = b.y - mouse.y, d = Math.hypot(dx, dy);
         if (d < 180 && d > 0) { b.vx += (dx / d) * 0.35; b.vy += (dy / d) * 0.35; }
         // autonomous swirling drift
