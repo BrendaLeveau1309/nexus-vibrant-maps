@@ -106,22 +106,22 @@ function NexoVitalApp() {
   return (
     <PhoneFrame>
     <main className={`${darkMode ? "dark" : ""} mobile-app relative h-full w-full overflow-hidden bg-mobile-canvas text-foreground`}>
-      {view !== "home" && <header className="mobile-header absolute inset-x-0 top-0 z-20 flex h-[72px] items-center gap-3 bg-primary px-4 text-primary-foreground"><Button size="icon" variant="ghost" className="text-primary-foreground hover:bg-primary-foreground/15 hover:text-primary-foreground" aria-label="Abrir menú" onClick={() => setMenuOpen(true)}><Menu /></Button><div className="flex-1"><p className="text-base font-extrabold">NexoVital<span className="ml-1 text-secondary">.</span></p><p className="text-[10px] text-primary-foreground/80">{role === "donor" ? "Donante" : "Solicitante"}</p></div><Button size="icon" variant="ghost" className="text-primary-foreground hover:bg-primary-foreground/15 hover:text-primary-foreground" aria-label="Notificaciones" onClick={() => setMenuPanel("notifications")}><Bell /></Button></header>}
+      <header className="absolute inset-x-0 top-0 z-20">
+        <div className="mobile-header flex items-center justify-between bg-primary px-3 py-3 text-primary-foreground shadow-brand">
+          <Button size="icon" variant="ghost" className="text-primary-foreground hover:bg-primary-foreground/15 hover:text-primary-foreground" aria-label="Abrir menú" onClick={() => setMenuOpen(true)}><Menu /></Button>
+          <NexoLogo className="ml-1 size-9 text-primary-foreground" />
+          <div className="min-w-0 flex-1 px-2">
+            <h1 className="truncate text-base font-extrabold text-primary-foreground">NexoVital</h1>
+            <p className="truncate text-xs font-bold text-primary-foreground/85">{role === "donor" ? "Donante" : "Solicitante"} · Hola, Valeria</p>
+          </div>
+          {role === "donor" && <span className="rounded-md bg-primary-foreground/15 px-3 py-2 text-sm font-extrabold text-primary-foreground">O+</span>}
+          <Button size="icon" variant="ghost" className="text-primary-foreground hover:bg-primary-foreground/15 hover:text-primary-foreground" aria-label="Notificaciones" onClick={() => setMenuPanel("notifications")}><Bell /></Button>
+        </div>
+      </header>
       {view === "home" && (
         <>
           <FullScreenMap />
-          <header className="absolute inset-x-0 top-0 z-20">
-            <div className="mobile-header flex items-center justify-between bg-primary px-3 py-3 text-primary-foreground shadow-brand">
-              <Button size="icon" variant="ghost" className="text-primary-foreground hover:bg-primary-foreground/15 hover:text-primary-foreground" aria-label="Abrir menú" onClick={() => setMenuOpen(true)}><Menu /></Button>
-              <NexoLogo className="ml-1 size-9 text-primary-foreground" />
-              <div className="min-w-0 flex-1 px-2">
-                <h1 className="truncate text-base font-extrabold text-primary-foreground">NexoVital</h1>
-                <p className="truncate text-xs font-bold text-primary-foreground/85">{role === "donor" ? "Donante" : "Solicitante"} · Hola, Valeria</p>
-              </div>
-              {role === "donor" && <span className="rounded-md bg-primary-foreground/15 px-3 py-2 text-sm font-extrabold text-primary-foreground">O+</span>}
-              <Button size="icon" variant="ghost" className="text-primary-foreground hover:bg-primary-foreground/15 hover:text-primary-foreground" aria-label="Notificaciones" onClick={() => setMenuPanel("notifications")}><Bell /></Button>
-            </div>
-          </header>
+
 
           {role === "donor" ? (
             <>

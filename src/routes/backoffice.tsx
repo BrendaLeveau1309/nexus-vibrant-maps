@@ -4,6 +4,7 @@ import { Activity, ArrowRight, Building2, ClipboardPlus, Droplets, Eye, EyeOff, 
 import { NexoLogo } from "@/components/nexovital/logo";
 import { Button } from "@/components/ui/button";
 import { CphAdmin } from "@/components/nexovital/cph-admin";
+import { LiquidRed } from "@/components/nexovital/liquid-red";
 
 export const Route = createFileRoute("/backoffice")({
   head: () => ({ meta: [
@@ -147,8 +148,7 @@ function Backoffice() {
     const field = "flex items-center gap-3 rounded-lg border bg-surface px-4 focus-within:ring-2 focus-within:ring-primary/40";
     return <main className="grid min-h-screen bg-surface md:grid-cols-[1fr_1fr]">
       <section className="relative hidden overflow-hidden bg-primary text-primary-foreground md:flex md:flex-col md:items-center md:justify-center">
-        <span aria-hidden className="absolute -left-32 -top-32 size-96 rounded-full bg-primary-foreground/10" />
-        <span aria-hidden className="absolute -bottom-40 -right-24 size-[28rem] rounded-full bg-primary-foreground/10" />
+        <LiquidRed />
         <div className="relative text-center">
           <NexoLogo className="mx-auto block size-44 text-primary-foreground" />
           <h1 className="mt-4 text-6xl font-extrabold tracking-tight">NexoVital</h1>
